@@ -37,6 +37,7 @@ static CGFloat kCDConvReportAbuseVCInputTextFieldHeight = 100;
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.view.backgroundColor = [UIColor whiteColor];
     self.title = @"举报";
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"提交" style:UIBarButtonItemStylePlain target:self action:@selector(submit:)];
     [self.view addSubview:self.inputTextField];

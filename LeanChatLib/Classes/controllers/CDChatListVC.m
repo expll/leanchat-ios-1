@@ -51,6 +51,7 @@ static NSString *cellIdentifier = @"ContactCell";
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.view.backgroundColor = [UIColor whiteColor];
     [LZConversationCell registerCellToTableView:self.tableView];
     self.refreshControl = [self getRefreshControl];
     // 当在其它 Tab 的时候，收到消息 badge 增加，所以需要一直监听

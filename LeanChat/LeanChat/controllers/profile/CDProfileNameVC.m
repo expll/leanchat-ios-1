@@ -43,6 +43,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.view.backgroundColor = [UIColor whiteColor];
     CDNameForm *nameForm = [[CDNameForm alloc] init];
     nameForm.name = self.placeholderName;
     self.formController.form = nameForm;

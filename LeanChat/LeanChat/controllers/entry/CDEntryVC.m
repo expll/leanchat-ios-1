@@ -19,7 +19,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
+    self.view.backgroundColor = [UIColor whiteColor];
     //[self.view setBackgroundColor:RGBCOLOR(222, 223, 225)];
     [self.view addSubview:self.iconImageView];
     [self.view addSubview:self.usernameField];

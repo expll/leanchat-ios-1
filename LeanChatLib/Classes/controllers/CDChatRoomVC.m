@@ -61,7 +61,7 @@ static NSInteger const kOnePageSize = 10;
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
+    self.view.backgroundColor = [UIColor whiteColor];
     [self initBarButton];
     [self initBottomMenuAndEmotionView];
     [self.view addSubview:self.clientStatusView];

@@ -26,6 +26,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.view.backgroundColor = [UIColor whiteColor];
     self.title = @"新的朋友";
     
     UIRefreshControl *refreshControl = [[UIRefreshControl alloc] init];

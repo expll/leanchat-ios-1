@@ -11,7 +11,6 @@
 @interface CDConvNameVC ()
 
 @property (strong, nonatomic) IBOutlet UITableViewCell *tableCell;
-
 @property (weak, nonatomic) IBOutlet UITextField *nameTextField;
 
 @end
@@ -29,11 +28,13 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
+    self.view.backgroundColor = [UIColor whiteColor];
     self.title = @"群聊名称";
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemSave target:self action:@selector(saveName:)];
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemStop target:self action:@selector(backPressed)];
     self.nameTextField.text = self.conv.displayName;
+    self.tableView.scrollEnabled = NO;
+    //FIXME:修改 tableView 的高度
 }
 
 - (void)backPressed {
@@ -53,11 +54,6 @@
             }
         }];
     }
-}
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
 }
 
 #pragma mark - Table view data source

@@ -29,6 +29,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.view.backgroundColor = [UIColor whiteColor];
     self.title = @"选择要提醒的人";
     [CDImageLabelTableCell registerCellToTalbeView:self.tableView];
     [self loadDataSource];
