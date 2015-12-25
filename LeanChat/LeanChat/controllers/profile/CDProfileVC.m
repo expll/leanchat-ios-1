@@ -39,6 +39,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.view.backgroundColor = [UIColor whiteColor];
     self.tableViewStyle = UITableViewStyleGrouped;
     [self loadDataSource];
     

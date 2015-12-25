@@ -21,6 +21,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.view.backgroundColor = [UIColor whiteColor];
     self.title = @"注册";
     self.navigationItem.leftBarButtonItem = self.cancelBarButtonItem;
     [self.view addSubview:self.registerButton];

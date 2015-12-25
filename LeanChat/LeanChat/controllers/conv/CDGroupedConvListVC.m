@@ -16,6 +16,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.view.backgroundColor = [UIColor whiteColor];
     self.title = @"群组";
     [CDImageLabelTableCell registerCellToTalbeView:self.tableView];
     

@@ -35,6 +35,7 @@ static CGFloat const kTextFieldMarginTop = 30;
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.view.backgroundColor = [UIColor whiteColor];
     self.title = @"手机号注册";
     self.navigationItem.leftBarButtonItem = self.cancelBarButtonItem;
     [self.view addSubview:self.backgroundImageView];

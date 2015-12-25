@@ -25,6 +25,7 @@ static NSString *cellIndentifier = @"cellIndentifier";
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.view.backgroundColor = [UIColor whiteColor];
     self.title = @"查找好友";
     [_searchBar setDelegate:self];
     [_tableView setDelegate:self];
