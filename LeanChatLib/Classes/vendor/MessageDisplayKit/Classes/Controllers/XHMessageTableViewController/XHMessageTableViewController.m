@@ -9,6 +9,8 @@
 #import "XHMessageTableViewController.h"
 #import <MobileCoreServices/MobileCoreServices.h>
 
+static void * const XHMessageInputTextViewContext = (void*)&XHMessageInputTextViewContext;
+
 @interface XHMessageTableViewController ()
 
 /**
@@ -52,6 +54,7 @@
  *  管理录音工具对象
  */
 @property (nonatomic, strong) XHVoiceRecordHelper *voiceRecordHelper;
+@property (nonatomic, assign) BOOL observingContentOffset;
 
 #pragma mark - DataSource Change
 /**
@@ -429,27 +432,27 @@ static CGPoint  delayOffset = {0.0};
 }
 
 - (void)scrollToBottomAnimated:(BOOL)animated {
-	if (![self shouldAllowScroll])
+    if (![self shouldAllowScroll])
         return;
-	
+    
     NSInteger rows = [self.messageTableView numberOfRowsInSection:0];
     
     if (rows > 0) {
         [self.messageTableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:rows - 1 inSection:0]
-                              atScrollPosition:UITableViewScrollPositionBottom
-                                      animated:animated];
+                                     atScrollPosition:UITableViewScrollPositionBottom
+                                             animated:animated];
     }
 }
 
 - (void)scrollToRowAtIndexPath:(NSIndexPath *)indexPath
-			  atScrollPosition:(UITableViewScrollPosition)position
-					  animated:(BOOL)animated {
-	if (![self shouldAllowScroll])
+              atScrollPosition:(UITableViewScrollPosition)position
+                      animated:(BOOL)animated {
+    if (![self shouldAllowScroll])
         return;
-	
-	[self.messageTableView scrollToRowAtIndexPath:indexPath
-						  atScrollPosition:position
-								  animated:animated];
+    
+    [self.messageTableView scrollToRowAtIndexPath:indexPath
+                                 atScrollPosition:position
+                                         animated:animated];
 }
 
 #pragma mark - Previte Method
@@ -500,10 +503,10 @@ static CGPoint  delayOffset = {0.0};
     _isUserScrolling = NO;
     
     // 初始化message tableView
-	XHMessageTableView *messageTableView = [[XHMessageTableView alloc] initWithFrame:self.view.bounds style:UITableViewStylePlain];
-	messageTableView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-	messageTableView.dataSource = self;
-	messageTableView.delegate = self;
+    XHMessageTableView *messageTableView = [[XHMessageTableView alloc] initWithFrame:self.view.bounds style:UITableViewStylePlain];
+    messageTableView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    messageTableView.dataSource = self;
+    messageTableView.delegate = self;
     messageTableView.separatorColor = [UIColor clearColor];
     messageTableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     
@@ -516,7 +519,7 @@ static CGPoint  delayOffset = {0.0};
     }
     [self.view addSubview:messageTableView];
     [self.view sendSubviewToBack:messageTableView];
-	_messageTableView = messageTableView;
+    _messageTableView = messageTableView;
     
     // 设置Message TableView 的bottom edg
     CGFloat inputViewHeight = (self.inputViewStyle == XHMessageInputViewStyleFlat) ? 45.0f : 40.0f;
@@ -626,10 +629,13 @@ static CGPoint  delayOffset = {0.0};
     [self.messageTableView setupPanGestureControlKeyboardHide:self.allowsPanToDismissKeyboard];
     
     // KVO 检查contentSize
-    [self.messageInputView.inputTextView addObserver:self
-                                     forKeyPath:@"contentSize"
-                                        options:NSKeyValueObservingOptionNew
-                                        context:nil];
+    if (!self.observingContentOffset) {
+        [self.messageInputView.inputTextView addObserver:self
+                                              forKeyPath:@"contentSize"
+                                                 options:NSKeyValueObservingOptionNew
+                                                 context:XHMessageInputTextViewContext];
+        self.observingContentOffset = YES;
+    }
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -640,14 +646,18 @@ static CGPoint  delayOffset = {0.0};
     
     // remove键盘通知或者手势
     [self.messageTableView disSetupPanGestureControlKeyboardHide:self.allowsPanToDismissKeyboard];
-    
-    // remove KVO
-    [self.messageInputView.inputTextView removeObserver:self forKeyPath:@"contentSize"];
+    // For  solve this crash problem: http://i64.tinypic.com/2hfna4l.jpg
+    // http://stackoverflow.com/a/23207026/3395008
+    if (self.observingContentOffset) {
+        // remove KVO
+        [self.messageInputView.inputTextView removeObserver:self forKeyPath:@"contentSize"];
+        self.observingContentOffset = NO;
+    }
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view.    
+    // Do any additional setup after loading the view.
     // 初始化消息页面布局
     [self initilzer];
     [[XHMessageBubbleView appearance] setFont:[UIFont systemFontOfSize:16.0f]];
@@ -693,7 +703,7 @@ static CGPoint  delayOffset = {0.0};
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
     dateFormatter.dateFormat = @"yy-MMMM-dd";
     recorderPath = [[NSString alloc] initWithFormat:@"%@/Documents/", NSHomeDirectory()];
-//    dateFormatter.dateFormat = @"hh-mm-ss";
+    //    dateFormatter.dateFormat = @"hh-mm-ss";
     dateFormatter.dateFormat = @"yyyy-MM-dd-hh-mm-ss";
     recorderPath = [recorderPath stringByAppendingFormat:@"%@-MySound.aac", [dateFormatter stringFromDate:now]];
     return recorderPath;
@@ -975,7 +985,7 @@ static CGPoint  delayOffset = {0.0};
 
 - (void)inputTextViewDidBeginEditing:(XHMessageTextView *)messageInputTextView {
     if (!self.previousTextViewContentHeight)
-		self.previousTextViewContentHeight = [self getTextViewContentH:messageInputTextView];
+        self.previousTextViewContentHeight = [self getTextViewContentH:messageInputTextView];
 }
 
 - (void)didChangeSendVoiceAction:(BOOL)changed {
@@ -1146,7 +1156,7 @@ static CGPoint  delayOffset = {0.0};
 }
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
-	self.isUserScrolling = YES;
+    self.isUserScrolling = YES;
     
     UIMenuController *menu = [UIMenuController sharedMenuController];
     if (menu.isMenuVisible) {
@@ -1226,7 +1236,11 @@ static CGPoint  delayOffset = {0.0};
                       ofObject:(id)object
                         change:(NSDictionary *)change
                        context:(void *)context {
-    if (object == self.messageInputView.inputTextView && [keyPath isEqualToString:@"contentSize"]) {
+    if(context != XHMessageInputTextViewContext) {
+        [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+        return;
+    }
+    if(context == XHMessageInputTextViewContext) {
         [self layoutAndAnimateMessageInputTextView:object];
     }
 }
