@@ -40,7 +40,7 @@ static NSString *reuseIdentifier = @"Cell";
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
+    self.view.backgroundColor = [UIColor whiteColor];
     [CDImageLabelTableCell registerCellToTalbeView:self.tableView];
     
     self.title = @"邀请好友";
@@ -58,9 +58,11 @@ static NSString *reuseIdentifier = @"Cell";
         if ([self filterError:error]) {
             [self.potentialIds removeAllObjects];
             for (AVUser *user in friends) {
-                if ([[[CDCacheManager manager] getCurConv].members containsObject:user.objectId] == NO) {
-                    [self.potentialIds addObject:user.objectId];
-                }
+                [[CDCacheManager manager] fetchCurrentConversationIfNeeded:^(AVIMConversation *conversation, NSError *error) {
+                    if ([conversation.members containsObject:user.objectId] == NO) {
+                        [self.potentialIds addObject:user.objectId];
+                    }
+                }];
             }
             for (int i = 0; i < self.potentialIds.count; i++) {
                 [self.selected addObject:[NSNumber numberWithBool:NO]];
@@ -81,21 +83,20 @@ static NSString *reuseIdentifier = @"Cell";
         [self.presentingViewController dismissViewControllerAnimated:YES completion:nil];
         return;
     }
-    AVIMConversation *conv = [[CDCacheManager manager] getCurConv];
-    
-    if (!conv) {
-        __block AVIMConversation *conversation;
-        [[CDCacheManager manager] fetchConversation:^(AVObject *object, NSError *error) {
-            conversation = (AVIMConversation *)object;
-            [self safeInviteWithConversation:conversation inviteIds:inviteIds];
-        }];
-    } else {
-        [self safeInviteWithConversation:conv inviteIds:inviteIds];
-    }
+    [[CDCacheManager manager] fetchCurrentConversationIfNeeded:^(AVIMConversation *conversation, NSError *error) {
+        if (!error) {
+            [self unsafeInviteWithConversation:conversation inviteIds:inviteIds];
+        } else {
+            [self alertError:error];
+        }
+    }];
 }
 
-- (void)safeInviteWithConversation:(AVIMConversation *)conv inviteIds:(NSMutableArray *)inviteIds {
-    if ([[CDCacheManager manager] getCurConv].type == CDConvTypeSingle) {
+/*
+ * the conversation is possiable nil ,so we call it unsafe
+ */
+- (void)unsafeInviteWithConversation:(AVIMConversation *)conv inviteIds:(NSMutableArray *)inviteIds {
+    if (conv.type == CDConvTypeSingle) {
         // 单聊对话加入，直接创建一个群聊对话
         NSMutableArray *members = [conv.members mutableCopy];
         [members addObjectsFromArray:inviteIds];
@@ -108,15 +109,14 @@ static NSString *reuseIdentifier = @"Cell";
                 }];
             }
         }];
-    }
-    else {
+    } else {
         // 本来就是群聊对话，直接拉人
         [self showProgress];
         [conv addMembersWithClientIds:inviteIds callback: ^(BOOL succeeded, NSError *error) {
             [self hideProgress];
             if ([self filterError:error]) {
                 [self showProgress];
-                [[CDCacheManager manager] refreshCurConv: ^(BOOL succeeded, NSError *error) {
+                [[CDCacheManager manager] refreshCurrentConversation: ^(BOOL succeeded, NSError *error) {
                     [self hideProgress];
                     if ([self filterError:error]) {
                         [self.presentingViewController dismissViewControllerAnimated:YES completion:nil];
@@ -125,11 +125,6 @@ static NSString *reuseIdentifier = @"Cell";
             }
         }];
     }
-}
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
 }
 
 #pragma mark - Table view data source
@@ -150,14 +145,14 @@ static NSString *reuseIdentifier = @"Cell";
     cell.myLabel.text = user.username;
     if ([self.selected[indexPath.row] boolValue]) {
         cell.accessoryType = UITableViewCellAccessoryCheckmark;
-    }
-    else {
+    } else {
         cell.accessoryType = UITableViewCellAccessoryNone;
     }
     return cell;
 }
 
 #pragma mark - Table view delegate
+
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     NSInteger pos = indexPath.row;
     self.selected[pos] = [NSNumber numberWithBool:![self.selected[pos] boolValue]];
