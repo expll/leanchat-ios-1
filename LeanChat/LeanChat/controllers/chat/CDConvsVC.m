@@ -47,11 +47,8 @@
 
 - (UIImage *)defaultAvatarImageView {
     UIImage *defaultAvatarImageView = [UIImage imageNamed:@"image_placeholder"];
+    defaultAvatarImageView = [CDUtils roundImage:defaultAvatarImageView toSize:CGSizeMake(100, 100) radius:5];
     return defaultAvatarImageView;
-}
-
-- (CGFloat)avatarImageViewCornerRadius {
-    return 3;
 }
 
 @end

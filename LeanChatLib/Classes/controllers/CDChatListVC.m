@@ -195,10 +195,6 @@ static NSString *cellIdentifier = @"ContactCell";
         [cell.avatarImageView setImage:conversation.icon];
         cell.nameLabel.text = conversation.displayName;
     }
-    if ([self.chatListDelegate respondsToSelector:@selector(avatarImageViewCornerRadius)]) {
-        cell.avatarImageView.layer.masksToBounds = YES;
-        cell.avatarImageView.layer.cornerRadius = [self.chatListDelegate avatarImageViewCornerRadius];
-    }
     if (conversation.lastMessage) {
         cell.messageTextLabel.attributedText = [[CDMessageHelper helper] attributedStringWithMessage:conversation.lastMessage conversation:conversation];
         cell.timestampLabel.text = [[NSDate dateWithTimeIntervalSince1970:conversation.lastMessage.sendTimestamp / 1000] timeAgoSinceNow];
