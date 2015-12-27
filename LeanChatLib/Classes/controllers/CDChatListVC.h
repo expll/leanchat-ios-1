@@ -43,8 +43,6 @@
 
 - (UIImage *)defaultAvatarImageView;
 
-- (CGFloat)avatarImageViewCornerRadius;
-
 @end
 
 /**
