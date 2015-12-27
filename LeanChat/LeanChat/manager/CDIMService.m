@@ -52,11 +52,11 @@
 
 - (void)goWithConv:(AVIMConversation *)conv fromNav:(UINavigationController *)nav {
     
-    //如果从聊天界面跳转到当前页面，那么则直接 pop 回聊天界面
+    //如果从单聊聊天界面跳转到单聊页面，根据当前的业务可以认为这两个单聊是同一个页面，则直接 pop 回聊天界面
     for (UIViewController *viewController in nav.viewControllers) {
         if ([viewController isKindOfClass:[CDChatVC class]] ) {
             AVIMConversation * conversation = [(CDChatVC *)viewController conv];
-            if (conversation.members.count == 2) {
+            if (conversation.members.count == 2 && conv.members.count == 2) {
                 [nav popToViewController:viewController animated:YES];
                 return;
             }
