@@ -59,9 +59,6 @@ static CDChatManager *instance;
     return self;
 }
 
-- (void)dealloc {
-}
-
 - (NSString *)databasePathWithUserId:(NSString *)userId{
     NSString *libPath = [NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) objectAtIndex:0];
     return [libPath stringByAppendingPathComponent:[NSString stringWithFormat:@"com.leancloud.leanchatlib.%@.db3", userId]];
@@ -274,6 +271,7 @@ static CDChatManager *instance;
 }
 
 #pragma mark - status
+
 // 除了 sdk 的上面三个回调调用了，还在 open client 的时候调用了，好统一处理
 - (void)updateConnectStatus {
     self.connect = [AVIMClient defaultClient].status == AVIMClientStatusOpened;
@@ -324,8 +322,7 @@ static CDChatManager *instance;
         } else {
             [self receiveMessage:message conversation:conversation];
         }
-    }
-    else {
+    } else {
         DLog(@"Receive Message , but MessageId is nil");
     }
 }
