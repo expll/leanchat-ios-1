@@ -13,8 +13,7 @@
 
 @interface CDConvNameVC : CDBaseTableVC
 
-@property CDConvDetailVC *detailVC;
-
-@property AVIMConversation *conv;
+@property (nonatomic, strong) CDConvDetailVC *detailVC;
+@property (nonatomic,strong) AVIMConversation *conv;
 
 @end
