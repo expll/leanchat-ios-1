@@ -23,7 +23,7 @@
 
 - (instancetype)initWithConv:(AVIMConversation *)conv {
     self = [super initWithConv:conv];
-    [[CDCacheManager manager] setCurConv:conv];
+    [[CDCacheManager manager] setCurrentConversation:conv];
     return self;
 }
 

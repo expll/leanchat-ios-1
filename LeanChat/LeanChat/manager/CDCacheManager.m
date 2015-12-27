@@ -18,7 +18,7 @@ static CDCacheManager *cacheManager;
 
 @property (nonatomic, strong) NSCache *userCache;
 @property (nonatomic, copy) NSString *currentConversationId;
-
+@property (nonatomic, strong) AVIMConversation *currentConversation;
 @end
 
 @implementation CDCacheManager
@@ -44,7 +44,7 @@ static CDCacheManager *cacheManager;
 
 #pragma mark - cache delegate
 - (void)cache:(NSCache *)cache willEvictObject:(id)obj {
-//    DLog(@"will evict object");
+    //    DLog(@"will evict object");
 }
 
 #pragma mark - user cache
@@ -73,55 +73,80 @@ static CDCacheManager *cacheManager;
             }
             callback(YES, error);
         }];
-    }
-    else {
+    } else {
         callback(YES, nil);
     }
 }
 
 #pragma mark - current conversation
 
-- (void)setCurConv:(AVIMConversation *)conv {
+- (void)setCurrentConversation:(AVIMConversation *)conv {
     self.currentConversationId = conv.conversationId;
+    _currentConversation = conv;
 }
 
-- (AVIMConversation *)getCurConv {
-    NSAssert(self.currentConversationId.length > 0, @"currentConversationId is NULL");
-    return [[CDChatManager manager] lookupConvById:self.currentConversationId];
+/* fetch from memory cache ,it is possible be nil ,if nil, please fetch from server with `refreshCurConv:`*/
+- (AVIMConversation *)currentConversationFromMemory {
+    //FIXME: lookupConvById may return NULL
+    NSString *reason = [NSString stringWithFormat:@"class name :%@, line: %@, %@", @(__PRETTY_FUNCTION__), @(__LINE__), @"currentConversationId is NULL"];
+    NSAssert(self.currentConversationId.length > 0, reason);
+    NSString *currentConversationAssertReason = [NSString stringWithFormat:@"class name :%@, line: %@ , %@", @(__PRETTY_FUNCTION__), @(__LINE__), @"_currentConversation is NULL"];
+    NSAssert(_currentConversation, currentConversationAssertReason);
+    AVIMConversation *conversation = [[CDChatManager manager] lookupConvById:self.currentConversationId];
+    if (conversation) {
+        return conversation;
+    }
+    return _currentConversation;
 }
 
-- (void)refreshCurConv:(AVBooleanResultBlock)callback {
-    if ([self getCurConv] != nil) {
-        [[CDChatManager manager] fecthConvWithConvid:[self getCurConv].conversationId callback: ^(AVIMConversation *conversation, NSError *error) {
+- (void)refreshCurrentConversation:(AVBooleanResultBlock)callback {
+    if ([self currentConversationFromMemory] != nil) {
+        [[CDChatManager manager] fecthConvWithConvid:[self currentConversationFromMemory].conversationId callback: ^(AVIMConversation *conversation, NSError *error) {
             if (error) {
                 callback(NO, error);
+            } else {
+                [[NSNotificationCenter defaultCenter] postNotificationName:kCDNotificationConversationUpdated object:nil];
+                callback(YES, nil);
             }
-            else {
+        }];
+    } else {
+        [self fetchCurrentConversation:^(BOOL succeeded, NSError *error) {
+            if (!succeeded) {
+                callback(NO, error);
+            } else {
                 [[NSNotificationCenter defaultCenter] postNotificationName:kCDNotificationConversationUpdated object:nil];
                 callback(YES, nil);
             }
         }];
     }
-    else {
-        callback(NO, [NSError errorWithDomain:@"" code:0 userInfo:@{ NSLocalizedDescriptionKey:@"current conv is nil" }]);
-    }
 }
 
-- (void)fetchConversation:(AVObjectResultBlock)callback {
-    if ([self getCurConv] == nil) {
+- (void)fetchCurrentConversation:(AVBooleanResultBlock)callback {
+    NSString *reason = [NSString stringWithFormat:@"class name :%@, line: %@ , %@", @(__PRETTY_FUNCTION__), @(__LINE__), @"please fetch when current conversation is nil"];
+    NSAssert([self currentConversationFromMemory] == nil, reason);
+    [[CDChatManager manager] fecthConvWithConvid:self.currentConversationId callback: ^(AVIMConversation *conversation, NSError *error) {
+        if (error) {
+            callback(NO, error);
+        } else {
+            [self setCurrentConversation:conversation];
+            callback(YES, nil);
+        }
+    }];
+}
+
+- (void)fetchCurrentConversationIfNeeded:(AVIMConversationResultBlock)callback {
+    if ([self currentConversationFromMemory] == nil) {
         [[CDChatManager manager] fecthConvWithConvid:self.currentConversationId callback: ^(AVIMConversation *conversation, NSError *error) {
             if (error) {
                 callback(nil, error);
             }
             else {
-                [self setCurConv:conversation];
-//                [[NSNotificationCenter defaultCenter] postNotificationName:kCDNotificationConversationUpdated object:nil];
-                callback((AVObject *)conversation, nil);
+                [self setCurrentConversation:conversation];
+                callback(conversation, nil);
             }
         }];
-    }
-    else {
-        callback(nil, [NSError errorWithDomain:@"" code:0 userInfo:@{ NSLocalizedDescriptionKey:@"current conv is nil" }]);
+    } else {
+        callback([self currentConversationFromMemory], nil);
     }
 }
 

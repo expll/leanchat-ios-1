@@ -59,6 +59,7 @@ static NSString *const reuseIdentifier = @"Cell";
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.view.backgroundColor = [UIColor whiteColor];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refresh) name:kCDNotificationConversationUpdated object:nil];
     [self setupDatasource];
     [self setupBarButton];
@@ -66,23 +67,32 @@ static NSString *const reuseIdentifier = @"Cell";
 }
 
 - (void)setupDatasource {
-    //    NSDictionary *dict1 = @{ kCDConvDetailVCTitleKey:@"清空聊天记录",
-    //                             kCDConvDetailVCSelectorKey:NSStringFromSelector(@selector(deleteMsgs)) };
-    NSDictionary *dict2 = @{ kCDConvDetailVCTitleKey:@"举报",
-                             kCDConvDetailVCDisclosureKey:@YES,
-                             kCDConvDetailVCSelectorKey:NSStringFromSelector(@selector(goReportAbuse)) };
-    NSDictionary *dict3 = @{ kCDConvDetailVCTitleKey:@"消息免打扰", kCDConvDetailVCSwitchKey:@YES };
+    NSDictionary *dict1 = @{
+                            kCDConvDetailVCTitleKey : @"举报",
+                            kCDConvDetailVCDisclosureKey : @YES,
+                            kCDConvDetailVCSelectorKey : NSStringFromSelector(@selector(goReportAbuse))
+                            };
+    NSDictionary *dict2 = @{
+                            kCDConvDetailVCTitleKey : @"消息免打扰",
+                            kCDConvDetailVCSwitchKey : @YES
+                            };
     if (self.conv.type == CDConvTypeGroup) {
-        self.dataSource = [@[@{ kCDConvDetailVCTitleKey:@"群聊名称",
-                                kCDConvDetailVCDisclosureKey:@YES,
-                                kCDConvDetailVCDetailKey:self.conv.displayName,
-                                kCDConvDetailVCSelectorKey:NSStringFromSelector(@selector(goChangeName)) },
-                             dict3, dict2,
-                             @{ kCDConvDetailVCTitleKey:@"删除并退出",
-                                kCDConvDetailVCSelectorKey:NSStringFromSelector(@selector(quitConv)) }] mutableCopy];
-    }
-    else {
-        self.dataSource = [@[dict3, dict2] mutableCopy];
+        self.dataSource = [@[
+                             @{
+                                 kCDConvDetailVCTitleKey : @"群聊名称",
+                                 kCDConvDetailVCDisclosureKey : @YES,
+                                 kCDConvDetailVCDetailKey : self.conv.displayName,
+                                 kCDConvDetailVCSelectorKey : NSStringFromSelector(@selector(goChangeName))
+                                 },
+                             dict2,
+                             dict1,
+                             @{
+                                 kCDConvDetailVCTitleKey : @"删除并退出",
+                                 kCDConvDetailVCSelectorKey:NSStringFromSelector(@selector(quitConv))
+                                 }
+                             ] mutableCopy];
+    } else {
+        self.dataSource = [@[ dict2, dict1 ] mutableCopy];
     }
 }
 
@@ -97,8 +107,9 @@ static NSString *const reuseIdentifier = @"Cell";
     return _muteSwitch;
 }
 
+/* fetch from memory cache ,it is possible be nil ,if nil, please fetch from server with `refreshCurrentConversation:`*/
 - (AVIMConversation *)conv {
-    return [[CDCacheManager manager] getCurConv];
+    return [[CDCacheManager manager] currentConversationFromMemory];
 }
 
 - (LZAlertViewHelper *)alertViewHelper {
@@ -118,17 +129,20 @@ static NSString *const reuseIdentifier = @"Cell";
 }
 
 - (void)refresh {
-    if (!self.conv.members) {
-        [[CDCacheManager manager] fetchConversation:^(AVObject *object, NSError *error) {
-            self.conv = (AVIMConversation *)object;
-            [self safeRefresh];
-        }];
-    } else {
-        [self safeRefresh];
-    }
+    [[CDCacheManager manager] fetchCurrentConversationIfNeeded:^(AVIMConversation *conversation, NSError *error) {
+        if (!error) {
+            self.conv  = conversation;
+            [self unsafeRefresh];
+        } else {
+            [self alertError:error];
+        }
+    }];
 }
 
-- (void)safeRefresh {
+/*
+ * the members of conversation is possiable 0 ,so we call it unsafe
+ */
+- (void)unsafeRefresh {
     NSAssert(self.conv, @"the conv is nil in the method of `refresh`");
     NSSet *userIds = [NSSet setWithArray:self.conv.members];
     self.own = [self.conv.creator isEqualToString:[AVUser currentUser].objectId];
@@ -145,8 +159,8 @@ static NSString *const reuseIdentifier = @"Cell";
             [self.tableView reloadData];
         }
     }];
-
 }
+
 - (void)setupBarButton {
     UIBarButtonItem *addMember = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(addMember)];
     self.navigationItem.rightBarButtonItem = addMember;
@@ -154,10 +168,6 @@ static NSString *const reuseIdentifier = @"Cell";
 
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self name:kCDNotificationConversationUpdated object:nil];
-}
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
 }
 
 #pragma mark - tableview
@@ -169,8 +179,7 @@ static NSString *const reuseIdentifier = @"Cell";
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     if (section == 0) {
         return 1;
-    }
-    else {
+    } else {
         return self.dataSource.count;
     }
 }
@@ -181,30 +190,26 @@ static NSString *const reuseIdentifier = @"Cell";
         cell.members = self.displayMembers;
         cell.membersCellDelegate = self;
         return cell;
-    }
-    else {
+    } else {
         UITableViewCell *cell;
         static NSString *identifier = @"Cell";
         cell = [tableView dequeueReusableCellWithIdentifier:identifier];
         if (cell == nil) {
             cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:identifier];
         }
-        
         NSDictionary *data = self.dataSource[indexPath.row];
         NSString *title = [data objectForKey:kCDConvDetailVCTitleKey];
         cell.textLabel.text = title;
         NSString *detail = [data objectForKey:kCDConvDetailVCDetailKey];
         if (detail) {
             cell.detailTextLabel.text = self.conv.displayName;
-        }
-        else {
+        } else {
             cell.detailTextLabel.text = nil;
         }
         BOOL disclosure = [[data objectForKey:kCDConvDetailVCDisclosureKey] boolValue];
         if (disclosure) {
             cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-        }
-        else {
+        } else {
             cell.accessoryType = UITableViewCellAccessoryNone;
         }
         BOOL isSwitch = [[data objectForKey:kCDConvDetailVCSwitchKey] boolValue];
@@ -220,8 +225,7 @@ static NSString *const reuseIdentifier = @"Cell";
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     if (indexPath.section == 0) {
         return [LZMembersCell heightForMemberCount:self.displayMembers.count];
-    }
-    else {
+    } else {
         return 44;
     }
 }
@@ -254,9 +258,9 @@ static NSString *const reuseIdentifier = @"Cell";
     if ([member.objectId isEqualToString:self.conv.creator] == NO) {
         [self.alertViewHelper showConfirmAlertViewWithMessage:@"确定要踢走该成员吗？" block:^(BOOL confirm, NSString *text) {
             if (confirm) {
-                [self.conv removeMembersWithClientIds : @[member.objectId] callback : ^(BOOL succeeded, NSError *error) {
+                [self.conv removeMembersWithClientIds:@[ member.objectId ] callback : ^(BOOL succeeded, NSError *error) {
                     if ([self filterError:error]) {
-                        [[CDCacheManager manager] refreshCurConv: ^(BOOL succeeded, NSError *error) {
+                        [[CDCacheManager manager] refreshCurrentConversation: ^(BOOL succeeded, NSError *error) {
                             [self alertError:error];
                         }];
                     }
@@ -288,11 +292,6 @@ static NSString *const reuseIdentifier = @"Cell";
     else {
         [self.conv unmuteWithCallback:block];
     }
-}
-
-- (void)deleteMsgs {
-    //    [_storage deleteMsgsByConvid:self.conv.conversationId];
-    [self alert:@"已清空"];
 }
 
 - (void)goChangeName {
