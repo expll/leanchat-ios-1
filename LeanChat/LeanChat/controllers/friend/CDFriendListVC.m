@@ -103,8 +103,8 @@ static NSString *kCellSelectorKey = @"selector";
     }
     
     self.headerSectionDatas = [NSMutableArray array];
-    [self.headerSectionDatas addObject:@{ kCellImageKey:[UIImage imageNamed:@"new_friends_icon"], kCellTextKey:@"新的朋友",kCellBadgeKey:@(number), kCellSelectorKey:NSStringFromSelector(@selector(goNewFriend:))}];
-    [self.headerSectionDatas addObject:@{ kCellImageKey:[UIImage imageNamed:@"group_icon"], kCellTextKey:@"群组" , kCellSelectorKey:NSStringFromSelector(@selector(goGroup:))}];
+    [self.headerSectionDatas addObject:@{ kCellImageKey:[UIImage imageNamed:@"plugins_FriendNotify"], kCellTextKey:@"新的朋友",kCellBadgeKey:@(number), kCellSelectorKey:NSStringFromSelector(@selector(goNewFriend:))}];
+    [self.headerSectionDatas addObject:@{ kCellImageKey:[UIImage imageNamed:@"add_friend_icon_addgroup"], kCellTextKey:@"群组" , kCellSelectorKey:NSStringFromSelector(@selector(goGroup:))}];
     
     self.dataSource = [friends mutableCopy];
     [self.tableView reloadData];
