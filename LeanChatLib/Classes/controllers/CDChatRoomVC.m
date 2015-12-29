@@ -66,7 +66,7 @@ static NSInteger const kOnePageSize = 10;
     [self initBottomMenuAndEmotionView];
     [self.view addSubview:self.clientStatusView];
     // 设置自身用户名
-    id<CDUserModel> selfUser = [[CDChatManager manager].userDelegate getUserById:[CDChatManager manager].selfId];
+    id<CDUserModelDelegate> selfUser = [[CDChatManager manager].userDelegate getUserById:[CDChatManager manager].selfId];
     self.messageSender = [selfUser username];
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(receiveMessage:) name:kCDNotificationMessageReceived object:nil];
@@ -148,7 +148,7 @@ static NSInteger const kOnePageSize = 10;
 
 #pragma mark - XHMessageTableViewCell delegate
 
-- (void)multiMediaMessageDidSelectedOnMessage:(id <XHMessageModel> )message atIndexPath:(NSIndexPath *)indexPath onMessageTableViewCell:(XHMessageTableViewCell *)messageTableViewCell {
+- (void)multiMediaMessageDidSelectedOnMessage:(id<XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath onMessageTableViewCell:(XHMessageTableViewCell *)messageTableViewCell {
     UIViewController *disPlayViewController;
     switch (message.messageMediaType) {
         case XHBubbleMessageMediaTypeVideo:
@@ -200,21 +200,21 @@ static NSInteger const kOnePageSize = 10;
     }
 }
 
-- (void)didDoubleSelectedOnTextMessage:(id <XHMessageModel> )message atIndexPath:(NSIndexPath *)indexPath {
+- (void)didDoubleSelectedOnTextMessage:(id<XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath {
     DLog(@"text : %@", message.text);
     XHDisplayTextViewController *displayTextViewController = [[XHDisplayTextViewController alloc] init];
     displayTextViewController.message = message;
     [self.navigationController pushViewController:displayTextViewController animated:YES];
 }
 
-- (void)didSelectedAvatorOnMessage:(id <XHMessageModel> )message atIndexPath:(NSIndexPath *)indexPath {
+- (void)didSelectedAvatorOnMessage:(id<XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath {
     DLog(@"indexPath : %@", indexPath);
 }
 
 - (void)menuDidSelectedAtBubbleMessageMenuSelecteType:(XHBubbleMessageMenuSelecteType)bubbleMessageMenuSelecteType {
 }
 
-- (void)didRetrySendMessage:(id <XHMessageModel> )message atIndexPath:(NSIndexPath *)indexPath {
+- (void)didRetrySendMessage:(id<XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath {
     [self resendMessageAtIndexPath:indexPath discardIfFailed:false];
 }
 
@@ -271,7 +271,7 @@ static NSInteger const kOnePageSize = 10;
 
 // 发送视频消息的回调方法
 - (void)didSendVideoConverPhoto:(UIImage *)videoConverPhoto videoPath:(NSString *)videoPath fromSender:(NSString *)sender onDate:(NSDate *)date {
-    AVIMVideoMessage* sendVideoMessage = [AVIMVideoMessage messageWithText:nil attachedFilePath:videoPath attributes:nil];
+    AVIMVideoMessage *sendVideoMessage = [AVIMVideoMessage messageWithText:nil attachedFilePath:videoPath attributes:nil];
     [self sendMsg:sendVideoMessage];
 }
 
@@ -524,7 +524,7 @@ static NSInteger const kOnePageSize = 10;
 }
 
 - (XHMessage *)getXHMessageByMsg:(AVIMTypedMessage *)msg {
-    id <CDUserModel> fromUser = [[CDChatManager manager].userDelegate getUserById:msg.clientId];
+    id<CDUserModelDelegate> fromUser = [[CDChatManager manager].userDelegate getUserById:msg.clientId];
     XHMessage *xhMessage;
     NSDate *time = [self getTimestampDate:msg.sendTimestamp];
     if (msg.mediaType == kAVIMMessageMediaTypeText) {
@@ -578,7 +578,7 @@ static NSInteger const kOnePageSize = 10;
     NSInteger msgStatuses[4] = { AVIMMessageStatusSending, AVIMMessageStatusSent, AVIMMessageStatusDelivered, AVIMMessageStatusFailed };
     NSInteger xhMessageStatuses[4] = { XHMessageStatusSending, XHMessageStatusSent, XHMessageStatusReceived, XHMessageStatusFailed };
     
-    if (self.conv.type == CDConvTypeGroup) {
+    if (self.conv.type == CDConversationTypeGroup) {
         if (msg.status == AVIMMessageStatusSent) {
             msg.status = AVIMMessageStatusDelivered;
         }
@@ -618,7 +618,7 @@ static NSInteger const kOnePageSize = 10;
         if (error) {
             block(msgs, error);
         } else {
-            [self cacheMsgs:msgs callback:^(BOOL succeeded, NSError *error) {
+            [self memoryCacheMsgs:msgs callback:^(BOOL succeeded, NSError *error) {
                 block (msgs, error);
             }];
         }
@@ -682,7 +682,7 @@ static NSInteger const kOnePageSize = 10;
     }
 }
 
-- (void)cacheMsgs:(NSArray *)msgs callback:(AVBooleanResultBlock)callback {
+- (void)memoryCacheMsgs:(NSArray *)msgs callback:(AVBooleanResultBlock)callback {
     [self runInGlobalQueue:^{
         NSMutableSet *userIds = [[NSMutableSet alloc] init];
         for (AVIMTypedMessage *msg in msgs) {
@@ -730,7 +730,7 @@ static NSInteger const kOnePageSize = 10;
         return;
     }
     self.isLoadingMsg = YES;
-    [self cacheMsgs:@[message] callback:^(BOOL succeeded, NSError *error) {
+    [self memoryCacheMsgs:@[message] callback:^(BOOL succeeded, NSError *error) {
         if ([self filterError:error]) {
             XHMessage *xhMessage = [self getXHMessageByMsg:message];
             [self.msgs addObject:message];

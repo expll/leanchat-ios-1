@@ -42,13 +42,14 @@ typedef void (^CDRecentConversationsCallback)(NSArray *conversations, NSInteger 
 
 @required
 /**
- *  同步方法，下面的 cacheUserByIds:block 方法是为了 getUserById: 能同步返回用户信息
+ *  @brief 根据 id 获取用户对象
+ *  @attention 同步方法，下面的 `-cacheUserByIds:block` 方法是为了 `-getUserById:` 能同步返回用户信息。
  */
-- (id <CDUserModel> )getUserById:(NSString *)userId;
-
+- (id<CDUserModelDelegate>)getUserById:(NSString *)userId;
 
 /**
- *  对于每条消息，都会调用这个方法来缓存发送者的用户信息，以便 getUserById 直接返回用户信息
+ *  @brief 对于每条消息，都会调用这个方法。
+ *  @attention  你可以使用该代理来缓存发送者的用户信息，以便 `-getUserById:` 能直接从缓存中获取用户信息。
  */
 - (void)cacheUserByIds:(NSSet *)userIds block:(AVIMBooleanResultBlock)block;
 
@@ -61,7 +62,7 @@ typedef void (^CDRecentConversationsCallback)(NSArray *conversations, NSInteger 
 /**
  *  设置用户信息的 delegate
  */
-@property (nonatomic, strong) id <CDUserDelegate> userDelegate;
+@property (nonatomic, strong) id<CDUserDelegate> userDelegate;
 /**
  *  即 openClient 时的 clientId
  */
@@ -76,7 +77,7 @@ typedef void (^CDRecentConversationsCallback)(NSArray *conversations, NSInteger 
 @property (nonatomic, strong) NSString *chattingConversationId;
 
 /**
- *  是否使用开发证书去推送，默认为 NO。YES 的话每条消息会带上这个参数，云代码利用 Hook 设置证书
+ *  是否使用开发证书去推送，默认为 NO。如果设为 YES 的话每条消息会带上这个参数，云代码利用 Hook 设置证书
  *  参考 https://github.com/leancloud/leanchat-cloudcode/blob/master/cloud/mchat.js
  */
 @property (nonatomic, assign) BOOL useDevPushCerticate;
@@ -107,73 +108,66 @@ typedef void (^CDRecentConversationsCallback)(NSArray *conversations, NSInteger 
  *  @param convid   对话的 id
  *  @param callback
  */
-- (void)fecthConvWithConvid:(NSString *)convid callback:(AVIMConversationResultBlock)callback;
+- (void)fecthConversationWithConversationId:(NSString *)conversationId callback:(AVIMConversationResultBlock)callback;
 
 /**
  *  获取单聊对话
  *  @param otherId  对方的 clientId
  *  @param callback
  */
-- (void)fetchConvWithOtherId:(NSString *)otherId callback:(AVIMConversationResultBlock)callback;
+- (void)fetchConversationWithOtherId:(NSString *)otherId callback:(AVIMConversationResultBlock)callback;
 
 /**
  *  已知参与对话 members，获取群聊对话
  *  @param members  成员，clientId 数组
  *  @param callback
  */
-- (void)fetchConvWithMembers:(NSArray *)members callback:(AVIMConversationResultBlock)callback;
+- (void)fetchConversationWithMembers:(NSArray *)members callback:(AVIMConversationResultBlock)callback;
 
 /**
  *  获取我在其中的群聊对话，优先从缓存中获取
  *  @param block 对话数组回调
  */
-- (void)findGroupedConvsWithBlock:(AVIMArrayResultBlock)block;
+- (void)findGroupedConversationsWithBlock:(AVIMArrayResultBlock)block;
 
 /*!
  *  获取我在其中的群聊对话
  *  @param networkFirst 是否网络优先
  *  @param block        对话数组回调
  */
-- (void)findGroupedConvsWithNetworkFirst:(BOOL)networkFirst block:(AVIMArrayResultBlock)block;
-
-/**
- *  创建对话
- *  @param members  初始成员
- *  @param type     单聊/群聊
- *  @param callback 对话回调
- */
-- (void)createConvWithMembers:(NSArray *)members type:(CDConvType)type callback:(AVIMConversationResultBlock)callback LeanChatLibDeprecated("Use createConvWithMembers:type:unique:callback: instead. Always consider unique params.");
+- (void)findGroupedConversationsWithNetworkFirst:(BOOL)networkFirst block:(AVIMArrayResultBlock)block;
 
 /**
  *  创建对话
  *  @param members  初始成员
  *  @param type     单聊或群聊
- *  @param unique   是否唯一，如果有相同 members 的成员且要求唯一的话，将不创建返回原来的对话
+ *  @param unique   是否唯一，如果有相同 members 的成员且要求唯一的话，将不创建返回原来的对话。
  *  @param callback 对话回调
+ *  @attention  Always consider unique params.
  */
-- (void)createConvWithMembers:(NSArray *)members type:(CDConvType)type unique:(BOOL)unique callback:(AVIMConversationResultBlock)callback;
+- (void)createConversationWithMembers:(NSArray *)members type:(CDConversationType)type unique:(BOOL)unique callback:(AVIMConversationResultBlock)callback;
 
 /**
  *  更新对话 name 或 attrs
- *  @param conv     要更新的对话
+ *  @param Conversation     要更新的对话
  *  @param name     对话名字
  *  @param attrs    对话的附加属性
  *  @param callback
  */
-- (void)updateConv:(AVIMConversation *)conv name:(NSString *)name attrs:(NSDictionary *)attrs callback:(AVIMBooleanResultBlock)callback;
+- (void)updateConversation:(AVIMConversation *)conversation name:(NSString *)name attrs:(NSDictionary *)attrs callback:(AVIMBooleanResultBlock)callback;
 /**
  *  将对话缓存在内存中
- *  @param convids  需要缓存的对话 ids
+ *  @param conversationIds  需要缓存的对话 ids
  *  @param callback
  */
-- (void)cacheConvsWithIds:(NSMutableSet *)convids callback:(AVIMBooleanResultBlock)callback;
+- (void)cacheConversationsWithIds:(NSMutableSet *)conversationIds callback:(AVIMBooleanResultBlock)callback;
 
 /**
  *  根据对话 id 查找内存中的对话
- *  @param convid 对话 id
+ *  @param ConversationId 对话 id
  *  @return conversation 对象
  */
-- (AVIMConversation *)lookupConvById:(NSString *)convid;
+- (AVIMConversation *)lookupConversationById:(NSString *)conversationId;
 
 /**
  *  统一的发送消息接口

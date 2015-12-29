@@ -15,6 +15,7 @@
 #import "CDChatVC.h"
 #import <LeanChatLib/CDEmotionUtils.h>
 #import "CDAppDelegate.h"
+#import "UINavigationController+NestedPushFix.h"
 
 @interface CDIMService ()
 
@@ -31,18 +32,17 @@
     return imService;
 }
 
-#pragma mark - user delegate
+#pragma mark - CDUserDelegate delegate
 
 - (void)cacheUserByIds:(NSSet *)userIds block:(AVBooleanResultBlock)block {
     [[CDCacheManager manager] cacheUsersWithIds:userIds callback:block];
 }
 
-- (id <CDUserModel> )getUserById:(NSString *)userId {
+- (id<CDUserModelDelegate>)getUserById:(NSString *)userId {
     CDUser *user = [[CDUser alloc] init];
     AVUser *avUser = [[CDCacheManager manager] lookupUser:userId];
-    if (avUser == nil) {
-        DLog(@"avUser is nil!!!");
-    }
+    NSString *reason = [NSString stringWithFormat:@"class name :%@, line: %@ , %@", @(__PRETTY_FUNCTION__), @(__LINE__), @"avUser can't be nil!"];
+    NSAssert(avUser, reason);
     user.userId = userId;
     user.username = avUser.username;
     AVFile *avatarFile = [avUser objectForKey:@"avatar"];
@@ -50,34 +50,37 @@
     return user;
 }
 
-- (void)goWithConv:(AVIMConversation *)conv fromNav:(UINavigationController *)nav {
-    
+- (void)pushToChatRoomByConversation:(AVIMConversation *)conversation fromNavigation:(UINavigationController *)navigation completion:(CompletionBlock)completion {
     //如果从单聊聊天界面跳转到单聊页面，根据当前的业务可以认为这两个单聊是同一个页面，则直接 pop 回聊天界面
-    for (UIViewController *viewController in nav.viewControllers) {
+    for (UIViewController *viewController in navigation.viewControllers) {
         if ([viewController isKindOfClass:[CDChatVC class]] ) {
-            AVIMConversation * conversation = [(CDChatVC *)viewController conv];
-            if (conversation.members.count == 2 && conv.members.count == 2) {
-                [nav popToViewController:viewController animated:YES];
+            AVIMConversation  *conversation = [(CDChatVC *)viewController conv];
+            if (conversation.members.count == 2 && conversation.members.count == 2) {
+                [navigation popToViewController:viewController animated:YES];
                 return;
             }
         }
     }
-    
     //如果是从类似朋友圈的地方跳转来，则重新 push 到一个新创建的聊天界面
     CDAppDelegate *delegate = ((CDAppDelegate *)[[UIApplication sharedApplication] delegate]);
     UIWindow *window = delegate.window;
     UITabBarController *tabbarController = (UITabBarController *)window.rootViewController;
-    tabbarController.selectedViewController = tabbarController.viewControllers[0];
-    CDChatVC *chatVC = [[CDChatVC alloc] initWithConv:conv];
+    CDChatVC *chatVC = [[CDChatVC alloc] initWithConv:conversation];
     chatVC.hidesBottomBarWhenPushed = YES;
-    [nav popToRootViewControllerAnimated:NO];
+    if (tabbarController.selectedViewController != tabbarController.viewControllers[0]) {
+        tabbarController.selectedViewController = tabbarController.viewControllers[0];
+        [navigation popToRootViewControllerAnimated:NO];
+    }
     [tabbarController.selectedViewController pushViewController:chatVC animated:YES];
+    completion ? completion(YES, nil) : nil;
 }
 
-- (void)goWithUserId:(NSString *)userId fromVC:(CDBaseVC *)vc {
-    [[CDChatManager manager] fetchConvWithOtherId:userId callback: ^(AVIMConversation *conversation, NSError *error) {
-        if ([vc filterError:error]) {
-            [self goWithConv:conversation fromNav:vc.navigationController];
+- (void)createChatRoomByUserId:(NSString *)userId fromViewController:(CDBaseVC *)viewController completion:(CompletionBlock)completion {
+    [[CDChatManager manager] fetchConversationWithOtherId:userId callback: ^(AVIMConversation *conversation, NSError *error) {
+        if ([viewController filterError:error]) {
+            [self pushToChatRoomByConversation:conversation fromNavigation:viewController.navigationController completion:completion];
+        } else {
+            completion ? completion(NO, error) : nil;
         }
     }];
 }

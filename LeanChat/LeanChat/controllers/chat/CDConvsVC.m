@@ -26,27 +26,25 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor whiteColor];
     self.chatListDelegate = self;
 }
 
 - (void)viewController:(UIViewController *)viewController didSelectConv:(AVIMConversation *)conv {
-    [[CDIMService service] goWithConv:conv fromNav:viewController.navigationController];
+    [[CDIMService service] pushToChatRoomByConversation:conv fromNavigation:viewController.navigationController completion:nil];
 }
 
 - (void)setBadgeWithTotalUnreadCount:(NSInteger)totalUnreadCount {
     if (totalUnreadCount > 0) {
         self.tabBarItem.badgeValue = [NSString stringWithFormat:@"%ld", (long)totalUnreadCount];
         [[UIApplication sharedApplication] setApplicationIconBadgeNumber:totalUnreadCount];
-    }
-    else {
+    } else {
         self.tabBarItem.badgeValue = nil;
         [[UIApplication sharedApplication] setApplicationIconBadgeNumber:0];
     }
 }
 
 - (UIImage *)defaultAvatarImageView {
-    UIImage *defaultAvatarImageView = [UIImage imageNamed:@"image_placeholder"];
+    UIImage *defaultAvatarImageView = [UIImage imageNamed:@"avator"];
     defaultAvatarImageView = [CDUtils roundImage:defaultAvatarImageView toSize:CGSizeMake(100, 100) radius:5];
     return defaultAvatarImageView;
 }
