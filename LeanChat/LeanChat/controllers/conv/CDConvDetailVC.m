@@ -76,7 +76,7 @@ static NSString *const reuseIdentifier = @"Cell";
                             kCDConvDetailVCTitleKey : @"消息免打扰",
                             kCDConvDetailVCSwitchKey : @YES
                             };
-    if (self.conv.type == CDConvTypeGroup) {
+    if (self.conv.type == CDConversationTypeGroup) {
         self.dataSource = [@[
                              @{
                                  kCDConvDetailVCTitleKey : @"群聊名称",

@@ -34,7 +34,7 @@
 
 - (void)loadConversationsWhenInit {
     [self showProgress];
-    [[CDChatManager manager] findGroupedConvsWithBlock:^(NSArray *objects, NSError *error) {
+    [[CDChatManager manager] findGroupedConversationsWithBlock:^(NSArray *objects, NSError *error) {
         [self hideProgress];
         if ([self filterError:error]) {
             self.dataSource = [objects mutableCopy];
@@ -44,17 +44,13 @@
 }
 
 - (void)refresh:(UIRefreshControl *)refreshControl {
-    [[CDChatManager manager] findGroupedConvsWithNetworkFirst:YES block:^(NSArray *objects, NSError *error) {
+    [[CDChatManager manager] findGroupedConversationsWithNetworkFirst:YES block:^(NSArray *objects, NSError *error) {
         [CDUtils stopRefreshControl:refreshControl];
         if ([self filterError:error]) {
             self.dataSource = [objects mutableCopy];
             [self.tableView reloadData];
         }
     }];
-}
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
 }
 
 #pragma mark - Table view data source
@@ -72,7 +68,7 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     AVIMConversation *conv = [self.dataSource objectAtIndex:indexPath.row];
-    [[CDIMService service] goWithConv:conv fromNav:self.navigationController];
+    [[CDIMService service] pushToChatRoomByConversation:conv fromNavigation:self.navigationController completion:nil];
 }
 
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {

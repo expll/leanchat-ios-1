@@ -42,10 +42,6 @@
     }];
 }
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-}
-
 - (void)goChatGroupDetail:(id)sender {
     [self.navigationController pushViewController:[[CDConvDetailVC alloc] init] animated:YES];
 }
@@ -59,7 +55,7 @@
 }
 
 - (void)didInputAtSignOnMessageTextView:(XHMessageTextView *)messageInputTextView {
-    if (self.conv.type == CDConvTypeGroup) {
+    if (self.conv.type == CDConversationTypeGroup) {
         [self performSelector:@selector(goSelectMemberVC) withObject:nil afterDelay:0];
         // weird , call below function not input @
 //        [self goSelectMemberVC];
@@ -73,7 +69,6 @@
     CDBaseNavC *nav = [[CDBaseNavC alloc] initWithRootViewController:selectMemberVC];
     [self presentViewController:nav animated:YES completion:nil];
 }
-
 
 #pragma mark - CDSelectMemberVCDelegate
 
