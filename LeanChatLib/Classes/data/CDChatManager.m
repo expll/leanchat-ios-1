@@ -19,7 +19,7 @@ static CDChatManager *instance;
 @interface CDChatManager () <AVIMClientDelegate, AVIMSignatureDataSource>
 
 @property (nonatomic, assign, readwrite) BOOL connect;
-@property (nonatomic, strong) NSMutableDictionary *cachedConvs;
+@property (nonatomic, strong) NSMutableDictionary *cachedConversations;
 @property (nonatomic, strong) NSString *plistPath;
 @property (nonatomic, strong) NSMutableDictionary *conversationDatas;
 @property (nonatomic, assign) NSInteger totalUnreadCount;
@@ -53,8 +53,8 @@ static CDChatManager *instance;
         /* 取消下面的注释，将对 im的 open ，start(create conv),kick,invite 操作签名，更安全
          可以从你的服务器获得签名，这里从云代码获取，需要部署云代码，https://github.com/leancloud/leanchat-cloudcode
          */
-        //        _imClient.signatureDataSource=self;
-        _cachedConvs = [NSMutableDictionary dictionary];
+        //        _imClient.signatureDataSource = self;
+        _cachedConversations = [NSMutableDictionary dictionary];
     }
     return self;
 }
@@ -84,18 +84,18 @@ static CDChatManager *instance;
 
 #pragma mark - conversation
 
-- (void)fecthConvWithConvid:(NSString *)convid callback:(AVIMConversationResultBlock)callback {
-    NSAssert(convid.length > 0, @"convid is nil");
+- (void)fecthConversationWithConversationId:(NSString *)conversationId callback:(AVIMConversationResultBlock)callback {
+    NSAssert(conversationId.length > 0, @"Conversation id is nil");
     AVIMConversationQuery *q = [[AVIMClient defaultClient] conversationQuery];
     q.cachePolicy = kAVCachePolicyNetworkElseCache;
-    [q whereKey:@"objectId" equalTo:convid];
+    [q whereKey:@"objectId" equalTo:conversationId];
     [q findConversationsWithCallback: ^(NSArray *objects, NSError *error) {
         if (error) {
             callback(nil, error);
         }
         else {
             if (objects.count == 0) {
-                callback(nil, [CDChatManager errorWithText:[NSString stringWithFormat:@"conversation of %@ not exists", convid]]);
+                callback(nil, [CDChatManager errorWithText:[NSString stringWithFormat:@"conversation of %@ not exists", conversationId]]);
             } else {
                 callback([objects objectAtIndex:0], error);
             }
@@ -110,28 +110,28 @@ static CDChatManager *instance;
     }
 }
 
-- (void)fetchConvWithMembers:(NSArray *)members type:(CDConvType)type callback:(AVIMConversationResultBlock)callback {
+- (void)fetchConversationWithMembers:(NSArray *)members type:(CDConversationType)type callback:(AVIMConversationResultBlock)callback {
     if ([members containsObject:self.selfId] == NO) {
         [NSException raise:NSInvalidArgumentException format:@"members should contain myself"];
     }
     [self checkDuplicateValueOfArray:members];
-    [self createConvWithMembers:members type:type unique:YES callback:callback];
+    [self createConversationWithMembers:members type:type unique:YES callback:callback];
 }
 
-- (void)fetchConvWithMembers:(NSArray *)members callback:(AVIMConversationResultBlock)callback {
-    [self fetchConvWithMembers:members type:CDConvTypeGroup callback:callback];
+- (void)fetchConversationWithMembers:(NSArray *)members callback:(AVIMConversationResultBlock)callback {
+    [self fetchConversationWithMembers:members type:CDConversationTypeGroup callback:callback];
 }
 
-- (void)fetchConvWithOtherId:(NSString *)otherId callback:(AVIMConversationResultBlock)callback {
+- (void)fetchConversationWithOtherId:(NSString *)otherId callback:(AVIMConversationResultBlock)callback {
     NSMutableArray *array = [[NSMutableArray alloc] init];
     [array addObject:[AVIMClient defaultClient].clientId];
     [array addObject:otherId];
-    [self fetchConvWithMembers:array type:CDConvTypeSingle callback:callback];
+    [self fetchConversationWithMembers:array type:CDConversationTypeSingle callback:callback];
 }
 
-- (void)createConvWithMembers:(NSArray *)members type:(CDConvType)type unique:(BOOL)unique callback:(AVIMConversationResultBlock)callback {
+- (void)createConversationWithMembers:(NSArray *)members type:(CDConversationType)type unique:(BOOL)unique callback:(AVIMConversationResultBlock)callback {
     NSString *name = nil;
-    if (type == CDConvTypeGroup) {
+    if (type == CDConversationTypeGroup) {
         // 群聊默认名字， 老王、小李
         name = [AVIMConversation nameOfUserIds:members];
     }
@@ -143,20 +143,20 @@ static CDChatManager *instance;
         // 创建一个新对话
         options = AVIMConversationOptionNone;
     }
-    [[AVIMClient defaultClient] createConversationWithName:name clientIds:members attributes:@{ CONV_TYPE:@(type) } options:options callback:callback];
+    [[AVIMClient defaultClient] createConversationWithName:name clientIds:members attributes:@{ CONVERSATION_TYPE:@(type) } options:options callback:callback];
 }
 
-- (void)createConvWithMembers:(NSArray *)members type:(CDConvType)type callback:(AVIMConversationResultBlock)callback {
-    [self createConvWithMembers:members type:type unique:NO callback:callback];
+- (void)createConversationWithMembers:(NSArray *)members type:(CDConversationType)type callback:(AVIMConversationResultBlock)callback {
+    [self createConversationWithMembers:members type:type unique:NO callback:callback];
 }
 
-- (void)findGroupedConvsWithBlock:(AVIMArrayResultBlock)block {
-    [self findGroupedConvsWithNetworkFirst:NO block:block];
+- (void)findGroupedConversationsWithBlock:(AVIMArrayResultBlock)block {
+    [self findGroupedConversationsWithNetworkFirst:NO block:block];
 }
 
-- (void)findGroupedConvsWithNetworkFirst:(BOOL)networkFirst block:(AVIMArrayResultBlock)block {
+- (void)findGroupedConversationsWithNetworkFirst:(BOOL)networkFirst block:(AVIMArrayResultBlock)block {
     AVIMConversationQuery *q = [[AVIMClient defaultClient] conversationQuery];
-    [q whereKey:AVIMAttr(CONV_TYPE) equalTo:@(CDConvTypeGroup)];
+    [q whereKey:AVIMAttr(CONVERSATION_TYPE) equalTo:@(CDConversationTypeGroup)];
     [q whereKey:kAVIMKeyMember containedIn:@[self.selfId]];
     if (networkFirst) {
         q.cachePolicy = kAVCachePolicyNetworkElseCache;
@@ -169,7 +169,7 @@ static CDChatManager *instance;
     [q findConversationsWithCallback:block];
 }
 
-- (void)updateConv:(AVIMConversation *)conv name:(NSString *)name attrs:(NSDictionary *)attrs callback:(AVIMBooleanResultBlock)callback {
+- (void)updateConversation:(AVIMConversation *)conversation name:(NSString *)name attrs:(NSDictionary *)attrs callback:(AVIMBooleanResultBlock)callback {
     NSMutableDictionary *dict = [NSMutableDictionary dictionary];
     if (name) {
         [dict setObject:name forKey:@"name"];
@@ -177,13 +177,13 @@ static CDChatManager *instance;
     if (attrs) {
         [dict setObject:attrs forKey:@"attrs"];
     }
-    [conv update:dict callback:callback];
+    [conversation update:dict callback:callback];
 }
 
-- (void)fetchConvsWithConvids:(NSSet *)convids callback:(AVIMArrayResultBlock)callback {
-    if (convids.count > 0) {
+- (void)fetchConversationsWithConversationIds:(NSSet *)conversationIds callback:(AVIMArrayResultBlock)callback {
+    if (conversationIds.count > 0) {
         AVIMConversationQuery *q = [[AVIMClient defaultClient] conversationQuery];
-        [q whereKey:@"objectId" containedIn:[convids allObjects]];
+        [q whereKey:@"objectId" containedIn:[conversationIds allObjects]];
         q.cachePolicy = kAVCachePolicyNetworkElseCache;
         q.limit = 1000;  // default limit:10
         [q findConversationsWithCallback:callback];
@@ -195,7 +195,7 @@ static CDChatManager *instance;
 #pragma mark - utils
 
 - (void)sendMessage:(AVIMTypedMessage*)message conversation:(AVIMConversation *)conversation callback:(AVBooleanResultBlock)block {
-    id<CDUserModel> selfUser = [[CDChatManager manager].userDelegate getUserById:self.selfId];
+    id<CDUserModelDelegate> selfUser = [[CDChatManager manager].userDelegate getUserById:self.selfId];
     NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
     // 云代码中获取到用户名，来设置推送消息, 老王:今晚约吗？
     if (selfUser.username) {
@@ -215,7 +215,7 @@ static CDChatManager *instance;
 }
 
 - (void)sendWelcomeMessageToOther:(NSString *)other text:(NSString *)text block:(AVBooleanResultBlock)block {
-    [self fetchConvWithOtherId:other callback:^(AVIMConversation *conversation, NSError *error) {
+    [self fetchConversationWithOtherId:other callback:^(AVIMConversation *conversation, NSError *error) {
         if (error) {
             block(NO, error);
         } else {
@@ -360,11 +360,11 @@ static CDChatManager *instance;
 
 #pragma mark - signature
 
-- (id)convSignWithSelfId:(NSString *)selfId convid:(NSString *)convid targetIds:(NSArray *)targetIds action:(NSString *)action {
+- (id)conversationSignWithSelfId:(NSString *)selfId conversationId:(NSString *)conversationId targetIds:(NSArray *)targetIds action:(NSString *)action {
     NSMutableDictionary *dict = [NSMutableDictionary dictionary];
     [dict setObject:selfId forKey:@"self_id"];
-    if (convid) {
-        [dict setObject:convid forKey:@"convid"];
+    if (conversationId) {
+        [dict setObject:conversationId forKey:@"convid"];
     }
     if (targetIds) {
         [dict setObject:targetIds forKey:@"targetIds"];
@@ -393,20 +393,24 @@ static CDChatManager *instance;
                           conversationId:(NSString *)conversationId
                                   action:(NSString *)action
                        actionOnClientIds:(NSArray *)clientIds {
-    if ([action isEqualToString:@"open"] || [action isEqualToString:@"start"]) {
-        action = nil;
-    }
-    if ([action isEqualToString:@"remove"]) {
-        action = @"kick";
-    }
-    if ([action isEqualToString:@"add"]) {
-        action = @"invite";
-    }
-    NSDictionary *dict = [self convSignWithSelfId:clientId convid:conversationId targetIds:clientIds action:action];
+    do {
+        if ([action isEqualToString:@"open"] || [action isEqualToString:@"start"]) {
+            action = nil;
+            break;
+        }
+        if ([action isEqualToString:@"remove"]) {
+            action = @"kick";
+            break;
+        }
+        if ([action isEqualToString:@"add"]) {
+            action = @"invite";
+            break;
+        }
+    } while (0);
+    NSDictionary *dict = [self conversationSignWithSelfId:clientId conversationId:conversationId targetIds:clientIds action:action];
     if (dict != nil) {
         return [self getAVSignatureWithParams:dict peerIds:clientIds];
-    }
-    else {
+    } else {
         return nil;
     }
 }
@@ -458,31 +462,30 @@ static CDChatManager *instance;
     return [NSError errorWithDomain:@"LeanChatLib" code:0 userInfo:@{NSLocalizedDescriptionKey:text}];
 }
 
-#pragma mark - conv cache
+#pragma mark - Conversation cache
 
-- (NSString *)localKeyWithConvid:(NSString *)convid {
-    return [NSString stringWithFormat:@"conv_%@", convid];
+- (NSString *)localKeyWithConversationId:(NSString *)conversationId {
+    return [NSString stringWithFormat:@"conv_%@", conversationId];
 }
 
-- (AVIMConversation *)lookupConvById:(NSString *)convid {
+- (AVIMConversation *)lookupConversationById:(NSString *)conversationId {
     //FIXME:the convid is not exist in the table when log out
-    AVIMConversation *conversation = [[AVIMClient defaultClient] conversationForId:convid];
+    AVIMConversation *conversation = [[AVIMClient defaultClient] conversationForId:conversationId];
     return conversation;
 }
 
-- (void)cacheConvsWithIds:(NSMutableSet *)convids callback:(AVBooleanResultBlock)callback {
-    NSMutableSet *uncacheConvids = [[NSMutableSet alloc] init];
-    for (NSString *convid in convids) {
-        AVIMConversation * conversation = [self lookupConvById:convid];
+- (void)cacheConversationsWithIds:(NSMutableSet *)conversationIds callback:(AVBooleanResultBlock)callback {
+    NSMutableSet *uncacheConversationIds = [[NSMutableSet alloc] init];
+    for (NSString *conversationId in conversationIds) {
+        AVIMConversation  *conversation = [self lookupConversationById:conversationId];
         if (conversation == nil) {
-            [uncacheConvids addObject:convid];
+            [uncacheConversationIds addObject:conversationId];
         }
     }
-    [self fetchConvsWithConvids:uncacheConvids callback: ^(NSArray *objects, NSError *error) {
+    [self fetchConversationsWithConversationIds:uncacheConversationIds callback: ^(NSArray *objects, NSError *error) {
         if (error) {
             callback(NO, error);
-        }
-        else {
+        } else {
             callback(YES, nil);
         }
     }];
@@ -492,11 +495,11 @@ static CDChatManager *instance;
     static BOOL refreshedFromServer = NO;
     NSArray *conversations = [[CDConversationStore store] selectAllConversations];
     if (refreshedFromServer == NO && self.connect) {
-        NSMutableSet *convids = [NSMutableSet set];
+        NSMutableSet *conversationIds = [NSMutableSet set];
         for (AVIMConversation *conversation in conversations) {
-            [convids addObject:conversation.conversationId];
+            [conversationIds addObject:conversation.conversationId];
         }
-        [self fetchConvsWithConvids:convids callback:^(NSArray *objects, NSError *error) {
+        [self fetchConversationsWithConversationIds:conversationIds callback:^(NSArray *objects, NSError *error) {
             if (error) {
                 block(conversations, nil);
             } else {
@@ -519,7 +522,7 @@ static CDChatManager *instance;
             if (lastestMessages.count > 0) {
                 conversation.lastMessage = lastestMessages[0];
             }
-            if (conversation.type == CDConvTypeSingle) {
+            if (conversation.type == CDConversationTypeSingle) {
                 [userIds addObject:conversation.otherId];
             } else {
                 if (conversation.lastMessage) {
@@ -531,15 +534,13 @@ static CDChatManager *instance;
             }
         }
         NSArray *sortedRooms = [conversations sortedArrayUsingComparator:^NSComparisonResult(AVIMConversation *conv1, AVIMConversation *conv2) {
-            return conv2.lastMessage.sendTimestamp - conv1.lastMessage.sendTimestamp;
+            return (NSComparisonResult)(conv2.lastMessage.sendTimestamp - conv1.lastMessage.sendTimestamp);
         }];
-        
         if ([self.userDelegate respondsToSelector:@selector(cacheUserByIds:block:)]) {
             [self.userDelegate cacheUserByIds:userIds block: ^(BOOL succeeded, NSError *error) {
                 if (error) {
                     block(nil,0, error);
-                }
-                else {
+                } else {
                     block(sortedRooms, totalUnreadCount, error);
                 }
             }];
@@ -557,7 +558,8 @@ static CDChatManager *instance;
         return NO;
     } else {
         NSString *text = ((AVIMTextMessage *)message).text;
-        NSString *pattern = [NSString stringWithFormat:@"@%@ ",[AVUser currentUser].username];
+        id<CDUserModelDelegate> selfUser = [[CDChatManager manager].userDelegate getUserById:self.selfId];
+        NSString *pattern = [NSString stringWithFormat:@"@%@ ",selfUser.username];
         if([text rangeOfString:pattern].length > 0) {
             return YES;
         } else {
@@ -571,6 +573,5 @@ static CDChatManager *instance;
 - (void)deleteConversation:(AVIMConversation *)conversation {
     [[CDConversationStore store] deleteConversation:conversation];
 }
-
 
 @end

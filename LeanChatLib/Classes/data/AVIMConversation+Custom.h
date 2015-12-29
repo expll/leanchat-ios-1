@@ -3,17 +3,17 @@
 //  LeanChatLib
 //
 //  Created by lzw on 15/4/8.
-//  Copyright (c) 2015年 avoscloud. All rights reserved.
+//  Copyright (c) 2015年 LeanCloud. All rights reserved.
 //
 
 #import <AVOSCloudIM/AVOSCloudIM.h>
 
-#define CONV_TYPE @"type"
+#define CONVERSATION_TYPE @"type"
 
 typedef enum : NSUInteger {
-    CDConvTypeSingle = 0,
-    CDConvTypeGroup,
-} CDConvType;
+    CDConversationTypeSingle = 0,
+    CDConversationTypeGroup,
+} CDConversationType;
 
 @interface AVIMConversation (Custom)
 /**
@@ -37,7 +37,7 @@ typedef enum : NSUInteger {
  *
  *  @return 单聊或群聊
  */
-- (CDConvType)type;
+- (CDConversationType)type;
 
 /**
  *  单聊对话的对方的 clientId
