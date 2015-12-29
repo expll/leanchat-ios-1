@@ -3,6 +3,7 @@
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="9529"/>
+        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
     </dependencies>
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
@@ -14,16 +15,28 @@
                 <rect key="frame" x="0.0" y="0.0" width="302" height="54"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <imageView autoresizesSubviews="NO" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="image_placeholder.png" translatesAutoresizingMaskIntoConstraints="NO" id="iwE-1W-Cgt">
+                    <imageView autoresizesSubviews="NO" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="image_placeholder.png" translatesAutoresizingMaskIntoConstraints="NO" id="iwE-1W-Cgt">
                         <rect key="frame" x="17" y="8" width="37" height="37"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="37" id="XAe-0u-NiT"/>
+                        </constraints>
                     </imageView>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Label" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="39h-Bk-Cfg">
-                        <rect key="frame" x="65" y="13" width="182" height="28"/>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="39h-Bk-Cfg">
+                        <rect key="frame" x="65" y="13" width="229" height="28"/>
                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                         <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                         <nil key="highlightedColor"/>
                     </label>
                 </subviews>
+                <constraints>
+                    <constraint firstItem="iwE-1W-Cgt" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="topMargin" id="2nP-og-Vvp"/>
+                    <constraint firstItem="39h-Bk-Cfg" firstAttribute="centerY" secondItem="iwE-1W-Cgt" secondAttribute="centerY" id="8BN-Xq-qeo"/>
+                    <constraint firstItem="39h-Bk-Cfg" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="topMargin" constant="5" id="Clg-kD-5Jl"/>
+                    <constraint firstItem="39h-Bk-Cfg" firstAttribute="trailing" secondItem="H2p-sc-9uM" secondAttribute="trailingMargin" id="V2V-Xx-M8p"/>
+                    <constraint firstItem="39h-Bk-Cfg" firstAttribute="leading" secondItem="iwE-1W-Cgt" secondAttribute="trailing" constant="11" id="rH2-Bd-mCC"/>
+                    <constraint firstItem="iwE-1W-Cgt" firstAttribute="centerY" secondItem="H2p-sc-9uM" secondAttribute="centerY" id="sPb-8P-fJP"/>
+                    <constraint firstItem="iwE-1W-Cgt" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" constant="9" id="voc-aM-G5U"/>
+                </constraints>
             </tableViewCellContentView>
             <connections>
                 <outlet property="myImageView" destination="iwE-1W-Cgt" id="upo-T9-nKW"/>
