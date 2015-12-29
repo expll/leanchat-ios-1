@@ -3,7 +3,7 @@
 //  LeanChatLib
 //
 //  Created by lzw on 15/8/12.
-//  Copyright (c) 2015年 lzwjava@LeanCloud QQ: 651142978. All rights reserved.
+//  Copyright (c) 2015年 LeanCloud（Bug汇报：QQ1356701892）.  All rights reserved.
 //
 
 #import "AVIMTypedMessage.h"

@@ -3,7 +3,7 @@
 //  LeanChat
 //
 //  Created by 陈宜龙 on 15/12/27.
-//  Copyright © 2015年 lzwjava@LeanCloud QQ: 651142978. All rights reserved.
+//  Copyright © 2015年 LeanCloud（Bug汇报：QQ1356701892）.  All rights reserved.
 //
 
 #import <UIKit/UIKit.h>

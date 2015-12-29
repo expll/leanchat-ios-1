@@ -3,7 +3,7 @@
 //  LeanChatLib
 //
 //  Created by lzw on 15/7/13.
-//  Copyright (c) 2015年 lzwjava@LeanCloud QQ: 651142978. All rights reserved.
+//  Copyright (c) 2015年 LeanCloud（Bug汇报：QQ1356701892）.  All rights reserved.
 //
 
 #import "CDConversationStore.h"
@@ -168,7 +168,7 @@
 - (NSArray *)selectAllConversations {
     NSMutableArray *conversations = [NSMutableArray array];
     [self.databaseQueue inDatabase:^(FMDatabase *db) {
-        FMResultSet * resultSet = [db executeQuery:kCDConversationTableSelectSQL withArgumentsInArray:@[]];
+        FMResultSet  *resultSet = [db executeQuery:kCDConversationTableSelectSQL withArgumentsInArray:@[]];
         while ([resultSet next]) {
             [conversations addObject:[self createConversationFromResultSet:resultSet]];
         }
