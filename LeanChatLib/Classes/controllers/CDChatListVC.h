@@ -53,6 +53,6 @@
 /**
  *  设置 delegate
  */
-@property (nonatomic, strong) id <CDChatListVCDelegate> chatListDelegate;
+@property (nonatomic, strong) id<CDChatListVCDelegate> chatListDelegate;
 
 @end

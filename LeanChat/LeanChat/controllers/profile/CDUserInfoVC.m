@@ -66,7 +66,7 @@
 #pragma mark - actions
 
 - (void)goChat {
-    [[CDIMService service] goWithUserId:self.user.objectId fromVC:self];
+    [[CDIMService service] createChatRoomByUserId:self.user.objectId fromViewController:self completion:nil];
 }
 
 - (void)tryCreateAddRequest {

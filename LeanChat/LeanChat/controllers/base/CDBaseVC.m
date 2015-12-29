@@ -85,12 +85,12 @@
 }
 
 -(void)showNetworkIndicator{
-    UIApplication* app=[UIApplication sharedApplication];
+    UIApplication *app=[UIApplication sharedApplication];
     app.networkActivityIndicatorVisible=YES;
 }
 
 -(void)hideNetworkIndicator{
-    UIApplication* app=[UIApplication sharedApplication];
+    UIApplication *app=[UIApplication sharedApplication];
     app.networkActivityIndicatorVisible=NO;
 }
 
@@ -110,7 +110,7 @@
 - (void)toast:(NSString *)text duration:(NSTimeInterval)duration {
     [AVAnalytics event:@"toast" attributes:@{@"text": text}];
     
-    MBProgressHUD* hud=[MBProgressHUD showHUDAddedTo:self.view animated:YES];
+    MBProgressHUD *hud=[MBProgressHUD showHUDAddedTo:self.view animated:YES];
     //    hud.labelText=text;
     hud.detailsLabelFont = [UIFont systemFontOfSize:14];
     hud.detailsLabelText = text;
