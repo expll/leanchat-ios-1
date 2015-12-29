@@ -3,7 +3,7 @@
 //  LeanChatLib
 //
 //  Created by lzw on 15/4/3.
-//  Copyright (c) 2015年 avoscloud. All rights reserved.
+//  Copyright (c) 2015年 LeanCloud. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
@@ -12,7 +12,7 @@
 /**
  *  简单的实现 CDUserModel 协议的类。可以直接在你的 User 类里实现该协议。
  */
-@interface CDUser : NSObject <CDUserModel>
+@interface CDUser : NSObject<CDUserModelDelegate>
 
 @property (nonatomic, strong) NSString *userId;
 
