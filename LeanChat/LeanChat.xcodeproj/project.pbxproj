@@ -72,6 +72,7 @@
 		9A2AFA7B1C2AB21E00F451BE /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A2AFA7A1C2AB21E00F451BE /* Security.framework */; };
 		9A2AFA7D1C2AB22500F451BE /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A2AFA7C1C2AB22500F451BE /* StoreKit.framework */; };
 		9A2AFA7F1C2AB23400F451BE /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A2AFA7E1C2AB23400F451BE /* UIKit.framework */; };
+		9ACCE5251C3007BB00D98916 /* UINavigationController+NestedPushFix.m in Sources */ = {isa = PBXBuildFile; fileRef = 9ACCE5241C3007BB00D98916 /* UINavigationController+NestedPushFix.m */; };
 		9AD85BB91C21666B006A35C1 /* CYLTabBarControllerConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = 9AD85BB81C21666B006A35C1 /* CYLTabBarControllerConfig.m */; };
 /* End PBXBuildFile section */
 
@@ -194,6 +195,8 @@
 		9A2AFA7A1C2AB21E00F451BE /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		9A2AFA7C1C2AB22500F451BE /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		9A2AFA7E1C2AB23400F451BE /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		9ACCE5231C3007BB00D98916 /* UINavigationController+NestedPushFix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UINavigationController+NestedPushFix.h"; sourceTree = "<group>"; };
+		9ACCE5241C3007BB00D98916 /* UINavigationController+NestedPushFix.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UINavigationController+NestedPushFix.m"; sourceTree = "<group>"; };
 		9AD85BB71C21666B006A35C1 /* CYLTabBarControllerConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CYLTabBarControllerConfig.h; sourceTree = "<group>"; };
 		9AD85BB81C21666B006A35C1 /* CYLTabBarControllerConfig.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CYLTabBarControllerConfig.m; sourceTree = "<group>"; };
 		EF79D434DB9DF2EFE3DD51B2 /* libPods-LeanChat.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-LeanChat.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -268,6 +271,7 @@
 				70DC7DA91B2F531F0047B7AB /* manager */,
 				7073FC8C1B14718C006F2692 /* views */,
 				7073FC271B147048006F2692 /* Images.xcassets */,
+				9ACCE5131C2FFA1600D98916 /* Tool */,
 				7073FC1A1B147048006F2692 /* Supporting Files */,
 			);
 			path = LeanChat;
@@ -465,6 +469,15 @@
 			path = manager;
 			sourceTree = "<group>";
 		};
+		9ACCE5131C2FFA1600D98916 /* Tool */ = {
+			isa = PBXGroup;
+			children = (
+				9ACCE5231C3007BB00D98916 /* UINavigationController+NestedPushFix.h */,
+				9ACCE5241C3007BB00D98916 /* UINavigationController+NestedPushFix.m */,
+			);
+			path = Tool;
+			sourceTree = "<group>";
+		};
 		B215B044676D1B59F414465D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -656,6 +669,7 @@
 				7073FCA91B14718C006F2692 /* CDBaseNavC.m in Sources */,
 				7073FCB21B14718C006F2692 /* CDConvNameVC.m in Sources */,
 				7073FCBE1B14718C006F2692 /* CDNewFriendVC.m in Sources */,
+				9ACCE5251C3007BB00D98916 /* UINavigationController+NestedPushFix.m in Sources */,
 				7073FCD51B14718C006F2692 /* CDPopMenuItem.m in Sources */,
 				7073FCCF1B14718C006F2692 /* CDEntryBottomButton.m in Sources */,
 				700E6A151B3D2B4E00675021 /* LZPushManager.m in Sources */,
