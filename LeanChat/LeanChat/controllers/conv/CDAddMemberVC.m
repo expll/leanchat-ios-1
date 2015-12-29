@@ -96,16 +96,16 @@ static NSString *reuseIdentifier = @"Cell";
  * the conversation is possiable nil ,so we call it unsafe
  */
 - (void)unsafeInviteWithConversation:(AVIMConversation *)conv inviteIds:(NSMutableArray *)inviteIds {
-    if (conv.type == CDConvTypeSingle) {
+    if (conv.type == CDConversationTypeSingle) {
         // 单聊对话加入，直接创建一个群聊对话
         NSMutableArray *members = [conv.members mutableCopy];
         [members addObjectsFromArray:inviteIds];
         [self showProgress];
-        [[CDChatManager manager] createConvWithMembers:members type:CDConvTypeGroup unique:NO callback:^(AVIMConversation *conversation, NSError *error) {
+        [[CDChatManager manager] createConversationWithMembers:members type:CDConversationTypeGroup unique:NO callback:^(AVIMConversation *conversation, NSError *error) {
             [self hideProgress];
             if ([self filterError:error]) {
                 [self.presentingViewController dismissViewControllerAnimated:YES completion: ^{
-                    [[CDIMService service] goWithConv:conversation fromNav:_groupDetailVC.navigationController];
+                    [[CDIMService service] pushToChatRoomByConversation:conversation fromNavigation:_groupDetailVC.navigationController completion:nil];
                 }];
             }
         }];
