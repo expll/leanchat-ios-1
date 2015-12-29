@@ -16,7 +16,7 @@ static CDCacheManager *cacheManager;
 
 @interface CDCacheManager ()<NSCacheDelegate>
 
-@property (nonatomic, strong) NSCache *userCache;
+@property (nonatomic, strong) NSMutableDictionary *userMemoryCache;
 @property (nonatomic, copy) NSString *currentConversationId;
 @property (nonatomic, strong) AVIMConversation *currentConversation;
 @end
@@ -35,9 +35,7 @@ static CDCacheManager *cacheManager;
 {
     self = [super init];
     if (self) {
-        _userCache = [[NSCache alloc] init];
-        _userCache.delegate = self;
-        _userCache.evictsObjectsWithDiscardedContent = NO;
+        _userMemoryCache = [[NSMutableDictionary alloc] init];
     }
     return self;
 }
@@ -51,12 +49,12 @@ static CDCacheManager *cacheManager;
 
 - (void)registerUsers:(NSArray *)users {
     for (AVUser *user in users) {
-        [self.userCache setObject:user forKey:user.objectId];
+        [self.userMemoryCache setObject:user forKey:user.objectId];
     }
 }
 
 - (AVUser *)lookupUser:(NSString *)userId {
-    return [self.userCache objectForKey:userId];
+    return [self.userMemoryCache objectForKey:userId];
 }
 
 - (void)cacheUsersWithIds:(NSSet *)userIds callback:(AVBooleanResultBlock)callback {
@@ -92,7 +90,7 @@ static CDCacheManager *cacheManager;
     NSAssert(self.currentConversationId.length > 0, reason);
     NSString *currentConversationAssertReason = [NSString stringWithFormat:@"class name :%@, line: %@ , %@", @(__PRETTY_FUNCTION__), @(__LINE__), @"_currentConversation is NULL"];
     NSAssert(_currentConversation, currentConversationAssertReason);
-    AVIMConversation *conversation = [[CDChatManager manager] lookupConvById:self.currentConversationId];
+    AVIMConversation *conversation = [[CDChatManager manager] lookupConversationById:self.currentConversationId];
     if (conversation) {
         return conversation;
     }
@@ -101,7 +99,7 @@ static CDCacheManager *cacheManager;
 
 - (void)refreshCurrentConversation:(AVBooleanResultBlock)callback {
     if ([self currentConversationFromMemory] != nil) {
-        [[CDChatManager manager] fecthConvWithConvid:[self currentConversationFromMemory].conversationId callback: ^(AVIMConversation *conversation, NSError *error) {
+        [[CDChatManager manager] fecthConversationWithConversationId:[self currentConversationFromMemory].conversationId callback: ^(AVIMConversation *conversation, NSError *error) {
             if (error) {
                 callback(NO, error);
             } else {
@@ -124,7 +122,7 @@ static CDCacheManager *cacheManager;
 - (void)fetchCurrentConversation:(AVBooleanResultBlock)callback {
     NSString *reason = [NSString stringWithFormat:@"class name :%@, line: %@ , %@", @(__PRETTY_FUNCTION__), @(__LINE__), @"please fetch when current conversation is nil"];
     NSAssert([self currentConversationFromMemory] == nil, reason);
-    [[CDChatManager manager] fecthConvWithConvid:self.currentConversationId callback: ^(AVIMConversation *conversation, NSError *error) {
+    [[CDChatManager manager] fecthConversationWithConversationId:self.currentConversationId callback: ^(AVIMConversation *conversation, NSError *error) {
         if (error) {
             callback(NO, error);
         } else {
@@ -136,7 +134,7 @@ static CDCacheManager *cacheManager;
 
 - (void)fetchCurrentConversationIfNeeded:(AVIMConversationResultBlock)callback {
     if ([self currentConversationFromMemory] == nil) {
-        [[CDChatManager manager] fecthConvWithConvid:self.currentConversationId callback: ^(AVIMConversation *conversation, NSError *error) {
+        [[CDChatManager manager] fecthConversationWithConversationId:self.currentConversationId callback: ^(AVIMConversation *conversation, NSError *error) {
             if (error) {
                 callback(nil, error);
             }
