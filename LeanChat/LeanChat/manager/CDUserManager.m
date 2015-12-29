@@ -153,12 +153,10 @@ static CDUserManager *userManager;
     [q findObjectsInBackgroundWithBlock: ^(NSArray *objects, NSError *error) {
         if (error) {
             block(NO, error);
-        }
-        else {
+        } else {
             if (objects.count > 0) {
                 block(YES, nil);
-            }
-            else {
+            } else {
                 block(NO, error);
             }
         }
@@ -181,8 +179,7 @@ static CDUserManager *userManager;
         [q setCachePolicy:kAVCachePolicyNetworkElseCache];
         [q whereKey:@"objectId" containedIn:userIds];
         [q findObjectsInBackgroundWithBlock:callback];
-    }
-    else {
+    } else {
         callback([[NSArray alloc] init], nil);
     }
 }
@@ -208,13 +205,11 @@ static CDUserManager *userManager;
         [avatar getDataInBackgroundWithBlock: ^(NSData *data, NSError *error) {
             if (error == nil) {
                 block([UIImage imageWithData:data]);
-            }
-            else {
+            } else {
                 block([self defaultAvatarOfUser:user]);
             }
         }];
-    }
-    else {
+    } else {
         block([self defaultAvatarOfUser:user]);
     }
 }
@@ -229,8 +224,7 @@ static CDUserManager *userManager;
     [file saveInBackgroundWithBlock: ^(BOOL succeeded, NSError *error) {
         if (error) {
             callback(succeeded, error);
-        }
-        else {
+        } else {
             AVUser *user = [AVUser currentUser];
             [user setObject:file forKey:@"avatar"];
             [user saveInBackgroundWithBlock:callback];
@@ -279,13 +273,11 @@ static CDUserManager *userManager;
         if (error) {
             if (error.code != kAVErrorDuplicateValue) {
                 callback(NO, error);
-            }
-            else {
+            } else {
                 addRequest.status = CDAddRequestStatusDone;
                 [addRequest saveInBackgroundWithBlock:callback];
             }
-        }
-        else {
+        } else {
             addRequest.status = CDAddRequestStatusDone;
             [addRequest saveInBackgroundWithBlock:callback];
         }
@@ -302,16 +294,13 @@ static CDUserManager *userManager;
         if (error) {
             if (error.code == kAVErrorObjectNotFound) {
                 callback(NO, nil);
-            }
-            else {
+            } else {
                 callback(NO, error);
             }
-        }
-        else {
+        } else {
             if (number > 0) {
                 callback(YES, error);
-            }
-            else {
+            } else {
                 callback(NO, error);
             }
         }
@@ -331,12 +320,10 @@ static CDUserManager *userManager;
     [self haveWaitAddRequestWithToUser:user callback: ^(BOOL succeeded, NSError *error) {
         if (error) {
             callback(NO, error);
-        }
-        else {
+        } else {
             if (succeeded) {
                 callback(YES, [NSError errorWithDomain:@"Add Request" code:0 userInfo:@{ NSLocalizedDescriptionKey:@"已经请求过了" }]);
-            }
-            else {
+            } else {
                 AVUser *curUser = [AVUser currentUser];
                 CDAddRequest *addRequest = [[CDAddRequest alloc] init];
                 addRequest.fromUser = curUser;

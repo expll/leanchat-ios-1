@@ -18,7 +18,7 @@ typedef enum : NSUInteger {
 #define kAddRequestStatus @"status"
 #define kAddRequestIsRead @"isRead"
 
-@interface CDAddRequest : AVObject <AVSubclassing>
+@interface CDAddRequest : AVObject<AVSubclassing>
 
 @property (nonatomic) AVUser *fromUser;
 @property (nonatomic) AVUser *toUser;

@@ -3,7 +3,7 @@
 //  LeanChatLib
 //
 //  Created by lzw on 15/6/30.
-//  Copyright (c) 2015年 lzwjava@LeanCloud QQ: 651142978. All rights reserved.
+//  Copyright (c) 2015年 LeanCloud（Bug汇报：QQ1356701892）.  All rights reserved.
 //
 
 #import "CDMessageHelper.h"
@@ -63,8 +63,8 @@
 
 - (NSAttributedString *)attributedStringWithMessage:(AVIMTypedMessage *)message conversation:(AVIMConversation *)conversation {
     NSString *title = [self getMessageTitle:message];
-    if (conversation.type == CDConvTypeGroup) {
-        id<CDUserModel> user = [[CDChatManager manager].userDelegate getUserById:message.clientId];
+    if (conversation.type == CDConversationTypeGroup) {
+        id<CDUserModelDelegate> user = [[CDChatManager manager].userDelegate getUserById:message.clientId];
         title = [NSString stringWithFormat:@"%@: %@", user.username, title];
     }
     if (conversation.muted && conversation.unreadCount > 0) {
