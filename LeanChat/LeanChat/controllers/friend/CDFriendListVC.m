@@ -50,7 +50,7 @@ static NSString *kCellSelectorKey = @"selector";
     [self refresh];
     //Do this because -- Tab Bar covers TableView cells in iOS7
     self.tableView.contentInset = UIEdgeInsetsMake(0., 0., CGRectGetHeight(self.tabBarController.tabBar.frame), 0);
-
+    
 }
 
 - (void)setupTableView {
@@ -64,10 +64,6 @@ static NSString *kCellSelectorKey = @"selector";
         [_refreshControl addTarget:self action:@selector(refresh:) forControlEvents:UIControlEventValueChanged];
     }
     return _refreshControl;
-}
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
 }
 
 #pragma mark - Action
@@ -101,11 +97,17 @@ static NSString *kCellSelectorKey = @"selector";
     } else {
         self.tabBarItem.badgeValue = nil;
     }
-    
     self.headerSectionDatas = [NSMutableArray array];
-    [self.headerSectionDatas addObject:@{ kCellImageKey:[UIImage imageNamed:@"plugins_FriendNotify"], kCellTextKey:@"新的朋友",kCellBadgeKey:@(number), kCellSelectorKey:NSStringFromSelector(@selector(goNewFriend:))}];
-    [self.headerSectionDatas addObject:@{ kCellImageKey:[UIImage imageNamed:@"add_friend_icon_addgroup"], kCellTextKey:@"群组" , kCellSelectorKey:NSStringFromSelector(@selector(goGroup:))}];
-    
+    [self.headerSectionDatas addObject:@{
+                                         kCellImageKey : [UIImage imageNamed:@"plugins_FriendNotify"],
+                                         kCellTextKey : @"新的朋友",kCellBadgeKey:@(number),
+                                         kCellSelectorKey : NSStringFromSelector(@selector(goNewFriend:))
+                                         }];
+    [self.headerSectionDatas addObject:@{
+                                         kCellImageKey :[UIImage imageNamed:@"add_friend_icon_addgroup"],
+                                         kCellTextKey : @"群组" ,
+                                         kCellSelectorKey : NSStringFromSelector(@selector(goGroup:))
+                                         }];
     self.dataSource = [friends mutableCopy];
     [self.tableView reloadData];
 }
@@ -115,7 +117,7 @@ static NSString *kCellSelectorKey = @"selector";
         // why kAVErrorInternalServer ?
         if (error && error.code != kAVErrorCacheMiss && error.code == kAVErrorInternalServer) {
             // for the first start
-            block(nil, 0, error) ;
+            block(nil, 0, error);
         } else {
             if (objects == nil) {
                 objects = [NSMutableArray array];
@@ -163,11 +165,11 @@ static NSString *kCellSelectorKey = @"selector";
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-    return @[@"", @""][section];
+    return @[ @"", @"" ][section];
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
-    return [@[@0, @14][section] intValue];
+    return [@[ @0, @14 ][section] intValue];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -203,11 +205,20 @@ static NSString *kCellSelectorKey = @"selector";
         [self performSelector:selector withObject:nil afterDelay:0];
     } else {
         AVUser *user = [self.dataSource objectAtIndex:indexPath.row];
-        [[CDIMService service] goWithUserId:user.objectId fromVC:self];
+        [self showProgress];
+        [[CDIMService service] createChatRoomByUserId:user.objectId fromViewController:self completion:^(BOOL successed, NSError *error) {
+            [self hideProgress];
+            if (error) {
+                DLog(@"%@",error.userInfo);
+            }
+        }];
     }
 }
 
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (indexPath.section == 0) {
+        return NO;
+    }
     return YES;
 }
 
@@ -223,7 +234,7 @@ static NSString *kCellSelectorKey = @"selector";
     if (buttonIndex == 0) {
         AVUser *user = [self.dataSource objectAtIndex:alertView.tag];
         [self showProgress];
-        [[CDUserManager manager] removeFriend : user callback : ^(BOOL succeeded, NSError *error) {
+        [[CDUserManager manager] removeFriend:user callback:^(BOOL succeeded, NSError *error) {
             [self hideProgress];
             if ([self filterError:error]) {
                 [self refresh];

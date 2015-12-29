@@ -7,7 +7,7 @@
 
 #import "CDProfileNameVC.h"
 
-@interface CDNameForm : NSObject <FXForm>
+@interface CDNameForm : NSObject<FXForm>
 
 @property (nonatomic, strong) NSString *name;
 
