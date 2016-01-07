@@ -17,4 +17,6 @@ Pod::Spec.new do |s|
   s.dependency 'JSBadgeView', '1.4.1'
   s.dependency 'DateTools' , '1.5.0'
   s.dependency 'FMDB', '2.5'
+  s.dependency 'SDWebImage'
+
 end
