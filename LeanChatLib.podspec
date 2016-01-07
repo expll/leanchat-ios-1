@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "LeanChatLib"
-  s.version      = "0.3.0"
+  s.version      = "0.3.1"
   s.summary      = "An IM App Framework, support sending text, pictures, audio, video, location messaging, managing address book, more interesting features."
   s.homepage     = "https://github.com/leancloud/leanchat-ios"
   s.license      = "MIT"
@@ -12,11 +12,10 @@ Pod::Spec.new do |s|
   s.resources    = 'LeanChatLib/Resources/*'
   s.libraries    = 'icucore','sqlite3'
   s.requires_arc = true
-  s.dependency 'AVOSCloud', '~> 3.1.4'
-  s.dependency 'AVOSCloudIM', '~> 3.1.4'
+  #s.dependency 'AVOSCloud', '~> 3.1.4'
+  #s.dependency 'AVOSCloudIM', '~> 3.1.4'
   s.dependency 'JSBadgeView', '1.4.1'
   s.dependency 'DateTools' , '1.5.0'
   s.dependency 'FMDB', '2.5'
-  s.dependency 'SDWebImage'
 
 end
