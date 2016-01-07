@@ -88,7 +88,7 @@
 
 - (void)setupStoreWithDatabasePath:(NSString *)path {
     if (self.databaseQueue) {
-        DLog(@"database queue not nil !!!!");
+        DLog(@"database queue should not be nil !!!!");
     }
     self.databaseQueue = [FMDatabaseQueue databaseQueueWithPath:path];
     [self.databaseQueue inDatabase:^(FMDatabase *db) {
