@@ -20,6 +20,7 @@
 #import <iVersion/iVersion.h>
 #import <LeanCloudSocial/AVOSCloudSNS.h>
 #import <OpenShare/OpenShareHeader.h>
+#import "MBProgressHUD.h"
 
 @interface CDAppDelegate()
 
@@ -71,7 +72,7 @@
     
 #ifdef DEBUG
     [AVPush setProductionMode:NO];  // 如果要测试申请好友是否有推送，请设置为 YES
-    [AVOSCloud setAllLogsEnabled:YES];
+//    [AVOSCloud setAllLogsEnabled:YES];
 #endif
     return YES;
 }
@@ -149,7 +150,6 @@
     
     [[UIApplication sharedApplication] setStatusBarHidden:NO];
     [[CDCacheManager manager] registerUsers:@[[AVUser currentUser]]];
-    WEAKSELF
     [CDChatManager manager].userDelegate = [CDIMService service];
 
 #ifdef DEBUG
@@ -157,14 +157,43 @@
     [CDChatManager manager].useDevPushCerticate = YES;
 #endif
     
+    //提示正在登陆
+    [self toast:@"正在登陆" duration:MAXFLOAT];
     [[CDChatManager manager] openWithClientId:[AVUser currentUser].objectId callback: ^(BOOL succeeded, NSError *error) {
-        DLog(@"%@", error);
-        CYLTabBarControllerConfig *tabBarControllerConfig = [[CYLTabBarControllerConfig alloc] init];
-        weakSelf.window.rootViewController = tabBarControllerConfig.tabBarController;
+        [self hideProgress];
+        if (succeeded) {
+            CYLTabBarControllerConfig *tabBarControllerConfig = [[CYLTabBarControllerConfig alloc] init];
+            self.window.rootViewController = tabBarControllerConfig.tabBarController;
+        } else {
+            [self toLogin];
+            DLog(@"%@", error);
+        }
+
     }];
 }
 
-#pragma mark - 
+- (void)toast:(NSString *)text duration:(NSTimeInterval)duration {
+    [AVAnalytics event:@"toast" attributes:@{@"text": text}];
+    
+    MBProgressHUD *hud = [MBProgressHUD showHUDAddedTo:self.window animated:YES];
+    //    hud.labelText=text;
+    hud.detailsLabelFont = [UIFont systemFontOfSize:14];
+    hud.detailsLabelText = text;
+    hud.margin = 10.f;
+    hud.removeFromSuperViewOnHide = YES;
+    hud.mode = MBProgressHUDModeIndeterminate;
+    [hud hide:YES afterDelay:duration];
+}
+
+-(void)showProgress {
+    [MBProgressHUD showHUDAddedTo:self.window animated:YES];
+}
+
+-(void)hideProgress {
+    [MBProgressHUD hideHUDForView:self.window animated:YES];
+}
+
+#pragma mark -
 
 - (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url
 {
