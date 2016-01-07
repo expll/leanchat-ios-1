@@ -59,18 +59,22 @@ typedef void (^CDRecentConversationsCallback)(NSArray *conversations, NSInteger 
  *  核心的聊天管理类
  */
 @interface CDChatManager : NSObject
+
 /**
  *  设置用户信息的 delegate
  */
 @property (nonatomic, strong) id<CDUserDelegate> userDelegate;
+
 /**
  *  即 openClient 时的 clientId
  */
 @property (nonatomic, strong, readonly) NSString *selfId;
+
 /**
  *  是否和聊天服务器连通
  */
 @property (nonatomic, assign, readonly) BOOL connect;
+
 /**
  *  当前正在聊天的 conversationId
  */
@@ -155,6 +159,7 @@ typedef void (^CDRecentConversationsCallback)(NSArray *conversations, NSInteger 
  *  @param callback
  */
 - (void)updateConversation:(AVIMConversation *)conversation name:(NSString *)name attrs:(NSDictionary *)attrs callback:(AVIMBooleanResultBlock)callback;
+
 /**
  *  将对话缓存在内存中
  *  @param conversationIds  需要缓存的对话 ids

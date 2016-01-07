@@ -21,9 +21,11 @@
 
 @implementation CDChatVC
 
-- (instancetype)initWithConv:(AVIMConversation *)conv {
-    self = [super initWithConv:conv];
-    [[CDCacheManager manager] setCurrentConversation:conv];
+- (instancetype)initWithConversation:(AVIMConversation *)conv {
+    self = [super initWithConversation:conv];
+    if (self) {
+        [[CDCacheManager manager] setCurrentConversation:conv];
+    }
     return self;
 }
 
@@ -37,7 +39,7 @@
 
 - (void)testSendCustomeMessage {
     AVIMCustomMessage *userInfoMessage = [AVIMCustomMessage messageWithAttributes:@{ @"nickname" : @"lzw" }];
-    [self.conv sendMessage:userInfoMessage callback: ^(BOOL succeeded, NSError *error) {
+    [self.conversation sendMessage:userInfoMessage callback: ^(BOOL succeeded, NSError *error) {
         DLog(@"%@", error);
     }];
 }
@@ -55,7 +57,7 @@
 }
 
 - (void)didInputAtSignOnMessageTextView:(XHMessageTextView *)messageInputTextView {
-    if (self.conv.type == CDConversationTypeGroup) {
+    if (self.conversation.type == CDConversationTypeGroup) {
         [self performSelector:@selector(goSelectMemberVC) withObject:nil afterDelay:0];
         // weird , call below function not input @
 //        [self goSelectMemberVC];
@@ -65,7 +67,7 @@
 - (void)goSelectMemberVC {
     CDSelectMemberVC *selectMemberVC = [[CDSelectMemberVC alloc] init];
     selectMemberVC.selectMemberVCDelegate = self;
-    selectMemberVC.conversation = self.conv;
+    selectMemberVC.conversation = self.conversation;
     CDBaseNavC *nav = [[CDBaseNavC alloc] initWithRootViewController:selectMemberVC];
     [self presentViewController:nav animated:YES completion:nil];
 }

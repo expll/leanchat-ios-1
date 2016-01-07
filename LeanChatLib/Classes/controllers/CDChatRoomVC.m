@@ -27,7 +27,7 @@ static NSInteger const kOnePageSize = 10;
 
 @interface CDChatRoomVC ()
 
-@property (nonatomic, strong, readwrite) AVIMConversation *conv;
+@property (nonatomic, strong, readwrite) AVIMConversation *conversation;
 @property (atomic, assign) BOOL isLoadingMsg;
 @property (nonatomic, strong, readwrite) NSMutableArray *msgs;
 @property (nonatomic, strong) XHMessageTableViewCell *currentSelectedCell;
@@ -53,9 +53,11 @@ static NSInteger const kOnePageSize = 10;
     return self;
 }
 
-- (instancetype)initWithConv:(AVIMConversation *)conv {
+- (instancetype)initWithConversation:(AVIMConversation *)conversation {
     self = [self init];
-    self.conv = conv;
+    if (self) {
+        self.conversation = conversation;
+    }
     return self;
 }
 
@@ -80,7 +82,7 @@ static NSInteger const kOnePageSize = 10;
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    [CDChatManager manager].chattingConversationId = self.conv.conversationId;
+    [CDChatManager manager].chattingConversationId = self.conversation.conversationId;
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
@@ -125,7 +127,7 @@ static NSInteger const kOnePageSize = 10;
 }
 
 - (void)refreshConv {
-    self.title = self.conv.title;
+    self.title = self.conversation.title;
 }
 
 #pragma mark - connect status view
@@ -401,9 +403,9 @@ static NSInteger const kOnePageSize = 10;
 #pragma mark - conversations store
 
 - (void)updateConversationAsRead {
-    [[CDConversationStore store] insertConversation:self.conv];
-    [[CDConversationStore store] updateUnreadCountToZeroWithConversation:self.conv];
-    [[CDConversationStore store] updateMentioned:NO conversation:self.conv];
+    [[CDConversationStore store] insertConversation:self.conversation];
+    [[CDConversationStore store] updateUnreadCountToZeroWithConversation:self.conversation];
+    [[CDConversationStore store] updateMentioned:NO conversation:self.conversation];
     [[NSNotificationCenter defaultCenter] postNotificationName:kCDNotificationUnreadsUpdated object:nil];
 }
 
@@ -429,7 +431,7 @@ static NSInteger const kOnePageSize = 10;
 }
 
 - (void)sendMsg:(AVIMTypedMessage *)msg {
-    [[CDChatManager manager] sendMessage:msg conversation:self.conv callback:^(BOOL succeeded, NSError *error) {
+    [[CDChatManager manager] sendMessage:msg conversation:self.conversation callback:^(BOOL succeeded, NSError *error) {
         if (error) {
             // 伪造一个 messageId，重发的成功的时候，根据这个伪造的id把数据库中的改过来
             msg.messageId = [[CDChatManager manager] uuid];
@@ -437,7 +439,7 @@ static NSInteger const kOnePageSize = 10;
             if (msg.conversationId == nil) {
                 //文件没有保存上会导致 conversationId 为空
                 msg.clientId = [CDChatManager manager].selfId;
-                msg.conversationId = self.conv.conversationId;
+                msg.conversationId = self.conversation.conversationId;
             }
             [[CDFailedMessageStore store] insertFailedMessage:msg];
             [[CDSoundManager manager] playSendSoundIfNeed];
@@ -461,7 +463,7 @@ static NSInteger const kOnePageSize = 10;
     msg.status = AVIMMessageStatusSending;
     [self replaceMesssage:msg atIndexPath:indexPath];
     NSString *recordId = msg.messageId;
-    [[CDChatManager manager] sendMessage:msg conversation:self.conv callback:^(BOOL succeeded, NSError *error) {
+    [[CDChatManager manager] sendMessage:msg conversation:self.conversation callback:^(BOOL succeeded, NSError *error) {
         if (error) {
             if (discardIfFailed) {
                 // 服务器连通的情况下重发依然失败，说明消息有问题，如音频文件不存在，删掉这条消息
@@ -484,19 +486,19 @@ static NSInteger const kOnePageSize = 10;
 
 - (void)receiveMessage:(NSNotification *)notification {
     AVIMTypedMessage *message = notification.object;
-    if ([message.conversationId isEqualToString:self.conv.conversationId]) {
-        if (self.conv.muted == NO) {
+    if ([message.conversationId isEqualToString:self.conversation.conversationId]) {
+        if (self.conversation.muted == NO) {
             [[CDSoundManager manager] playReceiveSoundIfNeed];
         }
         [self insertMessage:message];
-//        [[CDChatManager manager] setZeroUnreadWithConversationId:self.conv.conversationId];
+//        [[CDChatManager manager] setZeroUnreadWithConversationId:self.conversation.conversationId];
 //        [[NSNotificationCenter defaultCenter] postNotificationName:kCDNotificationMessageReceived object:nil];
     }
 }
 
 - (void)onMessageDelivered:(NSNotification *)notification {
     AVIMTypedMessage *message = notification.object;
-    if ([message.conversationId isEqualToString:self.conv.conversationId]) {
+    if ([message.conversationId isEqualToString:self.conversation.conversationId]) {
         AVIMTypedMessage *foundMessage;
         NSInteger pos;
         for (pos = 0; pos < self.msgs.count; pos++) {
@@ -578,7 +580,7 @@ static NSInteger const kOnePageSize = 10;
     NSInteger msgStatuses[4] = { AVIMMessageStatusSending, AVIMMessageStatusSent, AVIMMessageStatusDelivered, AVIMMessageStatusFailed };
     NSInteger xhMessageStatuses[4] = { XHMessageStatusSending, XHMessageStatusSent, XHMessageStatusReceived, XHMessageStatusFailed };
     
-    if (self.conv.type == CDConversationTypeGroup) {
+    if (self.conversation.type == CDConversationTypeGroup) {
         if (msg.status == AVIMMessageStatusSent) {
             msg.status = AVIMMessageStatusDelivered;
         }
@@ -614,7 +616,7 @@ static NSInteger const kOnePageSize = 10;
 #pragma mark - query messages
 
 - (void)queryAndCacheMessagesWithTimestamp:(int64_t)timestamp block:(AVIMArrayResultBlock)block {
-    [[CDChatManager manager] queryTypedMessagesWithConversation:self.conv timestamp:timestamp limit:kOnePageSize block:^(NSArray *msgs, NSError *error) {
+    [[CDChatManager manager] queryTypedMessagesWithConversation:self.conversation timestamp:timestamp limit:kOnePageSize block:^(NSArray *msgs, NSError *error) {
         if (error) {
             block(msgs, error);
         } else {
@@ -633,7 +635,7 @@ static NSInteger const kOnePageSize = 10;
         [self queryAndCacheMessagesWithTimestamp:0 block:^(NSArray *msgs, NSError *error) {
             if ([self filterError:error]) {
                 // 失败消息加到末尾，因为 SDK 缓存不保存它们
-                NSArray *failedMessages = [[CDFailedMessageStore store] selectFailedMessagesByConversationId:self.conv.conversationId];
+                NSArray *failedMessages = [[CDFailedMessageStore store] selectFailedMessagesByConversationId:self.conversation.conversationId];
                 NSMutableArray *allMessages = [NSMutableArray arrayWithArray:msgs];
                 [allMessages addObjectsFromArray:failedMessages];
                 

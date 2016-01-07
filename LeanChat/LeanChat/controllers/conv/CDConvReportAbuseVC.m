@@ -26,7 +26,7 @@ static CGFloat kCDConvReportAbuseVCInputTextFieldHeight = 100;
 @implementation CDConvReportAbuseVC
 
 
-- (instancetype)initWithConvid:(NSString *)convid;
+- (instancetype)initWithConversationId:(NSString *)convid;
 {
     self = [super init];
     if (self) {

@@ -76,6 +76,7 @@ LeanChat 已经在 App Store 上架，可前往 https://itunes.apple.com/gb/app/
 3. 依次在合适的地方加入以下代码，
 
 应用启动后，初始化，以及配置 IM User
+
 ```objc
     [AVOSCloud setApplicationId:@"YourAppId" clientKey:@"YourAppKey"];
     [CDChatManager manager].userDelegate = [[CDUserFactory alloc] init];
@@ -92,19 +93,18 @@ LeanChat 已经在 App Store 上架，可前往 https://itunes.apple.com/gb/app/
 
 @end
 
-
 @implementation CDUserFactory
 
 #pragma mark - CDUserDelegate
--(void)cacheUserByIds:(NSSet *)userIds block:(AVIMArrayResultBlock)block{
+- (void)cacheUserByIds:(NSSet *)userIds block:(AVIMArrayResultBlock)block{
     block(nil,nil); // don't forget it
 }
 
--(id<CDUserModel>)getUserById:(NSString *)userId{
-    CDUser* user=[[CDUser alloc] init];
-    user.userId=userId;
-    user.username=userId;
-    user.avatarUrl=@"http://ac-x3o016bx.clouddn.com/86O7RAPx2BtTW5zgZTPGNwH9RZD5vNDtPm1YbIcu";
+- (id<CDUserModelDelegate>)getUserById:(NSString *)userId {
+    CDUser *user = [[CDUser alloc] init];
+    user.userId = userId;
+    user.username = userId;
+    user.avatarUrl = @"http://image17-c.poco.cn/mypoco/myphoto/20151211/16/17338872420151211164742047.png";
     return user;
 }
 
@@ -112,24 +112,28 @@ LeanChat 已经在 App Store 上架，可前往 https://itunes.apple.com/gb/app/
 
 ```
 
-这里的 CDUser 是应用内的User对象，你可以在你的User对象实现 CDUserModel 协议即可。
+这里的 CDUser 是应用内的User对象，你可以在你的 User 对象实现 CDUserModelDelegate 协议即可。
 
-CDUserModel，
+
+ CDUserModelDelegate 协议内容如下：
+
 ```objc
-@protocol CDUserModel <NSObject>
+@protocol CDUserModelDelegate <NSObject>
 
 @required
 
--(NSString*)userId;
+- (NSString*)userId;
 
--(NSString*)avatarUrl;
+- (NSString*)avatarUrl;
 
--(NSString*)username;
+- (NSString*)username;
 
 @end
 ```
 
-登录时调用，
+登录时调用：
+
+
 ```objc
         [[CDChatManager manager] openWithClientId:selfId callback: ^(BOOL succeeded, NSError *error) {
             if (error) {
@@ -141,37 +145,40 @@ CDUserModel，
         }];
 ```
 
-和某人聊天，
+和某人聊天：
+
 ```objc
-        [[CDChatManager manager] fetchConvWithOtherId : otherId callback : ^(AVIMConversation *conversation, NSError *error) {
+        [[CDChatManager manager] fetchConversationWithOtherId : otherId callback : ^(AVIMConversation *conversation, NSError *error) {
             if (error) {
                 DLog(@"%@", error);
             }
             else {
-                LCEChatRoomVC *chatRoomVC = [[LCEChatRoomVC alloc] initWithConv:conversation];
+                LCEChatRoomVC *chatRoomVC = [[LCEChatRoomVC alloc] initWithConversaion:conversation];
                 [weakSelf.navigationController pushViewController:chatRoomVC animated:YES];
             }
         }];
 ```
 
-和多人群聊，
+和多人群聊：
+
 ```objc
         NSMutableArray *memberIds = [NSMutableArray array];
         [memberIds addObject:groupId1];
         [memberIds addObject:groupId2];
         [memberIds addObject:[CDChatManager manager].selfId];
-        [[CDChatManager manager] fetchConvWithMembers:memberIds callback: ^(AVIMConversation *conversation, NSError *error) {
+        [[CDChatManager manager] fetchConversaionWithMembers:memberIds callback: ^(AVIMConversation *conversation, NSError *error) {
             if (error) {
                 DLog(@"%@", error);
             }
             else {
-                LCEChatRoomVC *chatRoomVC = [[LCEChatRoomVC alloc] initWithConv:conversation];
+                LCEChatRoomVC *chatRoomVC = [[LCEChatRoomVC alloc] initWithConversation:conversation];
                 [weakSelf.navigationController pushViewController:chatRoomVC animated:YES];
             }
         }];
 ```
 
-注销时，
+注销时：
+
 ```objc
     [[CDChatManager manager] closeWithCallback: ^(BOOL succeeded, NSError *error) {
         
@@ -189,7 +196,7 @@ CDUserModel，
 0.2.5
 
 使用 AVIMConversationQuery 里的 cachePolicy，节省流量更好支持离线
-修复当对话不存在调用 fetchConvWithConvid  可能崩溃的 Bug
+修复当对话不存在调用 fecthConversationWithConversationId  可能崩溃的 Bug
 
 0.2.4	
 
@@ -197,7 +204,7 @@ CDUserModel，
 
 0.2.3
 
-增加 fetchConvWithMembers: 接口的参数检查、修复对话列表当是单聊对话但只有一个成员时可能出现的崩溃、
+增加 fetchConversationWithMembers: 接口的参数检查、修复对话列表当是单聊对话但只有一个成员时可能出现的崩溃、
 
 0.2.2
 
