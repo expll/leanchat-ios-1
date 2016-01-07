@@ -110,13 +110,13 @@
 - (void)toast:(NSString *)text duration:(NSTimeInterval)duration {
     [AVAnalytics event:@"toast" attributes:@{@"text": text}];
     
-    MBProgressHUD *hud=[MBProgressHUD showHUDAddedTo:self.view animated:YES];
+    MBProgressHUD *hud = [MBProgressHUD showHUDAddedTo:self.view animated:YES];
     //    hud.labelText=text;
     hud.detailsLabelFont = [UIFont systemFontOfSize:14];
     hud.detailsLabelText = text;
-    hud.margin=10.f;
-    hud.removeFromSuperViewOnHide=YES;
-    hud.mode=MBProgressHUDModeText;
+    hud.margin = 10.f;
+    hud.removeFromSuperViewOnHide = YES;
+    hud.mode = MBProgressHUDModeText;
     [hud hide:YES afterDelay:duration];
 }
 
