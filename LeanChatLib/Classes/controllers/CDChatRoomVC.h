@@ -17,7 +17,7 @@
 /**
  *  开放给子类，来对当前对话进行额外操作
  */
-@property (nonatomic, strong, readonly) AVIMConversation *conv;
+@property (nonatomic, strong, readonly) AVIMConversation *conversation;
 
 /**
  *  当前对话的 AVIMTypedMessage Array，开放给子类来定制
@@ -29,6 +29,6 @@
  *  @param conv 要聊天的对话
  *  @return
  */
-- (instancetype)initWithConv:(AVIMConversation *)conv;
+- (instancetype)initWithConversation:(AVIMConversation *)conversation;
 
 @end

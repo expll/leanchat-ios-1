@@ -278,7 +278,7 @@ static NSString *const reuseIdentifier = @"Cell";
 #pragma mark - Action
 
 - (void)goReportAbuse {
-    CDConvReportAbuseVC *reportAbuseVC = [[CDConvReportAbuseVC alloc] initWithConvid:self.conv.conversationId];
+    CDConvReportAbuseVC *reportAbuseVC = [[CDConvReportAbuseVC alloc] initWithConversationId:self.conv.conversationId];
     [self.navigationController pushViewController:reportAbuseVC animated:YES];
 }
 

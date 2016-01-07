@@ -10,6 +10,6 @@
 
 @interface CDConvReportAbuseVC : CDBaseVC
 
-- (instancetype)initWithConvid:(NSString *)convid;
+- (instancetype)initWithConversationId:(NSString *)convid;
 
 @end
