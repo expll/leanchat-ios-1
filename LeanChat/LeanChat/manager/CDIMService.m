@@ -66,10 +66,8 @@
     UITabBarController *tabbarController = (UITabBarController *)window.rootViewController;
     CDChatVC *chatVC = [[CDChatVC alloc] initWithConversation:conversation];
     chatVC.hidesBottomBarWhenPushed = YES;
-    if (tabbarController.selectedViewController != tabbarController.viewControllers[0]) {
-        tabbarController.selectedViewController = tabbarController.viewControllers[0];
-        [navigation popToRootViewControllerAnimated:NO];
-    }
+    tabbarController.selectedViewController = tabbarController.viewControllers[0];
+    [navigation popToRootViewControllerAnimated:NO];
     [tabbarController.selectedViewController pushViewController:chatVC animated:YES];
     completion ? completion(YES, nil) : nil;
 }
