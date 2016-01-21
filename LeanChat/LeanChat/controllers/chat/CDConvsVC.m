@@ -29,13 +29,15 @@
     self.chatListDelegate = self;
 }
 
+#pragma mark - CDChatListVCDelegate
+
 - (void)viewController:(UIViewController *)viewController didSelectConv:(AVIMConversation *)conv {
     [[CDIMService service] pushToChatRoomByConversation:conv fromNavigation:viewController.navigationController completion:nil];
 }
 
 - (void)setBadgeWithTotalUnreadCount:(NSInteger)totalUnreadCount {
     if (totalUnreadCount > 0) {
-        self.tabBarItem.badgeValue = [NSString stringWithFormat:@"%ld", (long)totalUnreadCount];
+        [[self navigationController] tabBarItem].badgeValue = [NSString stringWithFormat:@"%ld", (long)totalUnreadCount];
         [[UIApplication sharedApplication] setApplicationIconBadgeNumber:totalUnreadCount];
     } else {
         self.tabBarItem.badgeValue = nil;

@@ -75,6 +75,16 @@
 		9AD85BB91C21666B006A35C1 /* CYLTabBarControllerConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = 9AD85BB81C21666B006A35C1 /* CYLTabBarControllerConfig.m */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		906327D31C508DD200B69415 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 906327CF1C508DD100B69415 /* LeanChatLib.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7073F9461B1467F5006F2692;
+			remoteInfo = LeanChatLib;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		4A71AD2EA525F79828723CA0 /* Pods-LeanChat.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-LeanChat.release.xcconfig"; path = "Pods/Target Support Files/Pods-LeanChat/Pods-LeanChat.release.xcconfig"; sourceTree = "<group>"; };
 		700E6A131B3D2B4E00675021 /* LZPushManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LZPushManager.h; sourceTree = "<group>"; };
@@ -183,6 +193,7 @@
 		70DC7DB11B2F531F0047B7AB /* CDUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CDUtils.m; sourceTree = "<group>"; };
 		70EB81571B4399AB0010659C /* CDProfileNameVC.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CDProfileNameVC.h; sourceTree = "<group>"; };
 		70EB81581B4399AB0010659C /* CDProfileNameVC.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CDProfileNameVC.m; sourceTree = "<group>"; };
+		906327CF1C508DD100B69415 /* LeanChatLib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = LeanChatLib.xcodeproj; path = ../LeanChatLib/LeanChatLib.xcodeproj; sourceTree = "<group>"; };
 		91EC9DF56C410F2764E79F62 /* Pods-LeanChat.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-LeanChat.debug.xcconfig"; path = "Pods/Target Support Files/Pods-LeanChat/Pods-LeanChat.debug.xcconfig"; sourceTree = "<group>"; };
 		9A2AFA6C1C2AADB200F451BE /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		9A2AFA6E1C2AADBB00F451BE /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
@@ -241,6 +252,7 @@
 		7073FC0E1B147048006F2692 = {
 			isa = PBXGroup;
 			children = (
+				906327CF1C508DD100B69415 /* LeanChatLib.xcodeproj */,
 				7073FC191B147048006F2692 /* LeanChat */,
 				7073FC181B147048006F2692 /* Products */,
 				D35BDE7D616EEF87BC0C5FA0 /* Pods */,
@@ -466,6 +478,14 @@
 			path = manager;
 			sourceTree = "<group>";
 		};
+		906327D01C508DD100B69415 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				906327D41C508DD200B69415 /* LeanChatLib.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		9ACCE5131C2FFA1600D98916 /* Tool */ = {
 			isa = PBXGroup;
 			children = (
@@ -549,12 +569,28 @@
 			mainGroup = 7073FC0E1B147048006F2692;
 			productRefGroup = 7073FC181B147048006F2692 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 906327D01C508DD100B69415 /* Products */;
+					ProjectRef = 906327CF1C508DD100B69415 /* LeanChatLib.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				7073FC161B147048006F2692 /* LeanChat */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		906327D41C508DD200B69415 /* LeanChatLib.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = LeanChatLib.framework;
+			remoteRef = 906327D31C508DD200B69415 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		7073FC151B147048006F2692 /* Resources */ = {
