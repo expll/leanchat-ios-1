@@ -19,7 +19,6 @@
 @interface CDAddMemberVC ()
 
 @property (nonatomic) NSMutableArray *selected;
-
 @property (nonatomic) NSMutableArray *potentialIds;
 
 @end

@@ -50,7 +50,7 @@
 }
 
 - (void)viewController:(UIViewController *)viewController didSelectConv:(AVIMConversation *)conv {
-    LCEChatRoomVC *chatRoomVC = [[LCEChatRoomVC alloc] initWithConv:conv];
+    LCEChatRoomVC *chatRoomVC = [[LCEChatRoomVC alloc] initWithConversation:<#(AVIMConversation *)#>:conv];
     chatRoomVC.hidesBottomBarWhenPushed = YES;
     [self.navigationController pushViewController:chatRoomVC animated:YES];
 }

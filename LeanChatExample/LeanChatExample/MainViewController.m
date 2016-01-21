@@ -37,12 +37,12 @@
     NSString *otherId = self.otherIdTextField.text;
     if (otherId.length > 0) {
         WEAKSELF
-        [[CDChatManager manager] fetchConvWithOtherId : otherId callback : ^(AVIMConversation *conversation, NSError *error) {
+        [[CDChatManager manager] fetchConversationWithOtherId : otherId callback : ^(AVIMConversation *conversation, NSError *error) {
             if (error) {
                 DLog(@"%@", error);
             }
             else {
-                LCEChatRoomVC *chatRoomVC = [[LCEChatRoomVC alloc] initWithConv:conversation];
+                LCEChatRoomVC *chatRoomVC = [[LCEChatRoomVC alloc] initWithConversation:conversation];
                 [weakSelf.navigationController pushViewController:chatRoomVC animated:YES];
             }
         }];
@@ -58,12 +58,12 @@
         [memberIds addObject:groupId1];
         [memberIds addObject:groupId2];
         [memberIds addObject:[CDChatManager manager].selfId];
-        [[CDChatManager manager] fetchConvWithMembers:memberIds callback: ^(AVIMConversation *conversation, NSError *error) {
+        [[CDChatManager manager] fetchConversationWithMembers:memberIds callback: ^(AVIMConversation *conversation, NSError *error) {
             if (error) {
                 DLog(@"%@", error);
             }
             else {
-                LCEChatRoomVC *chatRoomVC = [[LCEChatRoomVC alloc] initWithConv:conversation];
+                LCEChatRoomVC *chatRoomVC = [[LCEChatRoomVC alloc] initWithConversation:conversation];
                 [weakSelf.navigationController pushViewController:chatRoomVC animated:YES];
             }
         }];

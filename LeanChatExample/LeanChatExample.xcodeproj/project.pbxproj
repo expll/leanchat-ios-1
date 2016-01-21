@@ -149,6 +149,7 @@
 				70B299261ACEA0D400FE265E /* Frameworks */,
 				70B299271ACEA0D400FE265E /* Resources */,
 				0B50E2C544D49C0471F40535 /* Copy Pods Resources */,
+				4FC66B56FAC0845AB1A49D54 /* Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -221,6 +222,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-LeanChatExample/Pods-LeanChatExample-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		4FC66B56FAC0845AB1A49D54 /* Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Embed Pods Frameworks";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-LeanChatExample/Pods-LeanChatExample-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		F7848B19082D002003942795 /* Check Pods Manifest.lock */ = {

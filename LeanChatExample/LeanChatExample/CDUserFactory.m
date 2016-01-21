@@ -9,7 +9,7 @@
 #import "CDUserFactory.h"
 
 
-@interface CDUser : NSObject <CDUserModel>
+@interface CDUser : NSObject <CDUserModelDelegate>
 
 @property (nonatomic, strong) NSString *userId;
 
@@ -33,7 +33,7 @@
     block(YES, nil); // don't forget it
 }
 
-- (id <CDUserModel> )getUserById:(NSString *)userId {
+- (id <CDUserModelDelegate> )getUserById:(NSString *)userId {
     CDUser *user = [[CDUser alloc] init];
     user.userId = userId;
     user.username = userId;
