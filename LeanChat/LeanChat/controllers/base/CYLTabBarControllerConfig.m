@@ -60,6 +60,9 @@
          *  更多TabBar自定义设置：比如：tabBarItem 的选中和不选中文字和背景图片属性、tabbar 背景图片属性
          */
         // [[self class] customizeTabBarAppearance];
+        
+        [self setUpTabBarItemBadgesForControllers:@[secondViewController, thirdViewController]];
+        
         _tabBarController = tabBarController;
     }
     return _tabBarController;
@@ -94,6 +97,14 @@
                                        dict3
                                        ];
     tabBarController.tabBarItemsAttributes = tabBarItemsAttributes;
+}
+
+- (void)setUpTabBarItemBadgesForControllers:(NSArray<UIViewController *> *)viewControllers {
+    for (UIViewController *viewController in viewControllers) {
+        if ([viewController respondsToSelector:@selector(refresh)]) {
+            [viewController performSelector:@selector(refresh)];
+        }
+    }
 }
 
 /**

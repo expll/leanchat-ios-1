@@ -47,7 +47,6 @@ static NSString *kCellSelectorKey = @"selector";
     self.tableView.backgroundColor = [UIColor whiteColor];
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:@"contact_IconAdd"] style:UIBarButtonItemStylePlain target:self action:@selector(goAddFriend:)];
     [self setupTableView];
-    [self refresh];
     //Do this because -- Tab Bar covers TableView cells in iOS7
     self.tableView.contentInset = UIEdgeInsetsMake(0., 0., CGRectGetHeight(self.tabBarController.tabBar.frame), 0);
     
