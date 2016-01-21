@@ -93,9 +93,9 @@ static NSString *kCellSelectorKey = @"selector";
 
 - (void)refreshWithFriends:(NSArray *)friends badgeNumber:(NSInteger)number{
     if (number > 0) {
-        self.tabBarItem.badgeValue = [NSString stringWithFormat:@"%ld", number];;
+        [[self navigationController] tabBarItem].badgeValue = [NSString stringWithFormat:@"%ld", (long)number];
     } else {
-        self.tabBarItem.badgeValue = nil;
+        [[self navigationController] tabBarItem].badgeValue = nil;
     }
     self.headerSectionDatas = [NSMutableArray array];
     [self.headerSectionDatas addObject:@{
