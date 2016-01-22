@@ -141,6 +141,9 @@ static const CGFloat kXHBubbleMessageViewPadding = 8;
         case XHBubbleMessageMediaTypeLocalPosition:
             [[UIPasteboard generalPasteboard] setString:self.messageBubbleView.geolocationsLabel.text];
             break;
+        case XHBubbleMessageMediaTypeEmotion:
+        case XHBubbleMessageMediaTypeVideo:
+        case XHBubbleMessageMediaTypeVoice:
             break;
     }
     [self resignFirstResponder];
@@ -269,7 +272,14 @@ static const CGFloat kXHBubbleMessageViewPadding = 8;
     UIMenuItem *more = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringFromTable(@"more", @"MessageDisplayKitString", @"更多") action:@selector(more:)];
     
     UIMenuController *menu = [UIMenuController sharedMenuController];
-    [menu setMenuItems:[NSArray arrayWithObjects:copy, transpond, favorites, more, nil]];
+    
+    if (self.messageBubbleView.message.messageMediaType == XHBubbleMessageMediaTypeVideo
+        ||  self.messageBubbleView.message.messageMediaType == XHBubbleMessageMediaTypeVoice
+        || self.messageBubbleView.message.messageMediaType == XHBubbleMessageMediaTypeEmotion) {
+        [menu setMenuItems:[NSArray arrayWithObjects:transpond, favorites, more, nil]];
+    } else {
+        [menu setMenuItems:[NSArray arrayWithObjects:copy, transpond, favorites, more, nil]];
+    }
     
     
     CGRect targetRect = [self convertRect:[self.messageBubbleView bubbleFrame]
