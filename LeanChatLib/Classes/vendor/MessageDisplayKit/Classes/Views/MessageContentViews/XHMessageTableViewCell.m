@@ -141,7 +141,6 @@ static const CGFloat kXHBubbleMessageViewPadding = 8;
         case XHBubbleMessageMediaTypeLocalPosition:
             [[UIPasteboard generalPasteboard] setString:self.messageBubbleView.geolocationsLabel.text];
             break;
-        default:
             break;
     }
     [self resignFirstResponder];
