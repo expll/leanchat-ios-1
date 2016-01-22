@@ -19,6 +19,7 @@
 #import <iRate/iRate.h>
 #import <iVersion/iVersion.h>
 #import <LeanCloudSocial/AVOSCloudSNS.h>
+#import <AVOSCloudCrashReporting/AVOSCloudCrashReporting.h>
 #import <OpenShare/OpenShareHeader.h>
 #import "MBProgressHUD.h"
 
@@ -38,6 +39,10 @@
 #if USE_US
     [AVOSCloud useAVCloudUS];
 #endif
+    
+    // Enable Crash Reporting
+    [AVOSCloudCrashReporting enable];
+    
     [AVOSCloud setApplicationId:AVOSAppID clientKey:AVOSAppKey];
     //    [AVOSCloud setApplicationId:CloudAppId clientKey:CloudAppKey];
     //    [AVOSCloud setApplicationId:PublicAppId clientKey:PublicAppKey];

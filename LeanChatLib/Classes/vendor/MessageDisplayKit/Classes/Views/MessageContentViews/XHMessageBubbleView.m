@@ -46,10 +46,14 @@
 #pragma mark - Bubble view
 
 + (CGFloat)neededWidthForText:(NSString *)text {
-    CGSize stringSize;
-    stringSize = [text sizeWithFont:[[XHMessageBubbleView appearance] font]
-                     constrainedToSize:CGSizeMake(MAXFLOAT, 19)];
-    return roundf(stringSize.width);
+    NSAttributedString *attributedText =
+    [[NSAttributedString alloc] initWithString:text
+                                    attributes:@{NSFontAttributeName: [[XHMessageBubbleView appearance] font]}];
+    CGRect rect = [attributedText boundingRectWithSize:(CGSize){CGFLOAT_MAX, CGFLOAT_MAX}
+                                               options:NSStringDrawingUsesLineFragmentOrigin
+                                               context:nil];
+    CGSize size = rect.size;
+    return ceilf(size.width);
 }
 
 + (CGSize)neededSizeForText:(NSString *)text {
