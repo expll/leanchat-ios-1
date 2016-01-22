@@ -131,8 +131,18 @@ static const CGFloat kXHBubbleMessageViewPadding = 8;
 #pragma mark - Menu Actions
 
 - (void)copied:(id)sender {
-   if ([self.messageBubbleView.message messageMediaType] == XHBubbleMessageMediaTypeText) {
-        [[UIPasteboard generalPasteboard] setString:self.messageBubbleView.displayTextView.text];
+    switch (self.messageBubbleView.message.messageMediaType) {
+        case XHBubbleMessageMediaTypeText:
+            [[UIPasteboard generalPasteboard] setString:self.messageBubbleView.displayTextView.text];
+            break;
+        case XHBubbleMessageMediaTypePhoto:
+            [[UIPasteboard generalPasteboard] setImage:self.messageBubbleView.bubblePhotoImageView.messagePhoto];
+            break;
+        case XHBubbleMessageMediaTypeLocalPosition:
+            [[UIPasteboard generalPasteboard] setString:self.messageBubbleView.geolocationsLabel.text];
+            break;
+        default:
+            break;
     }
     [self resignFirstResponder];
     DLog(@"Cell was copy");
