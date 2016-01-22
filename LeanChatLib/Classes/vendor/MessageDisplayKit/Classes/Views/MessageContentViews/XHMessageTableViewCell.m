@@ -125,13 +125,15 @@ static const CGFloat kXHBubbleMessageViewPadding = 8;
 }
 
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
-    return (action == @selector(copyed:) || action == @selector(transpond:) || action == @selector(favorites:) || action == @selector(more:));
+    return (action == @selector(copied:) || action == @selector(transpond:) || action == @selector(favorites:) || action == @selector(more:));
 }
 
 #pragma mark - Menu Actions
 
-- (void)copyed:(id)sender {
-    [[UIPasteboard generalPasteboard] setString:self.messageBubbleView.displayTextView.text];
+- (void)copied:(id)sender {
+   if ([self.messageBubbleView.message messageMediaType] == XHBubbleMessageMediaTypeText) {
+        [[UIPasteboard generalPasteboard] setString:self.messageBubbleView.displayTextView.text];
+    }
     [self resignFirstResponder];
     DLog(@"Cell was copy");
 }
@@ -208,14 +210,7 @@ static const CGFloat kXHBubbleMessageViewPadding = 8;
             break;
         }
         case XHBubbleMessageMediaTypeText:
-        case XHBubbleMessageMediaTypeVoice: {
-            NSString* durationStr=@"";
-            if(message.voiceDuration!=0){
-                durationStr=[NSString stringWithFormat:@"%@\'\'", message.voiceDuration];
-            }
-            self.messageBubbleView.voiceDurationLabel.text = durationStr;
-//            break;
-        }
+        case XHBubbleMessageMediaTypeVoice:
         case XHBubbleMessageMediaTypeEmotion: {
             UITapGestureRecognizer *tapGestureRecognizer;
             if (currentMediaType == XHBubbleMessageMediaTypeText) {
@@ -230,15 +225,6 @@ static const CGFloat kXHBubbleMessageViewPadding = 8;
         default:
             break;
     }
-    
-    UILongPressGestureRecognizer *recognizer = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPressGestureRecognizerHandle:)];
-    [recognizer setMinimumPressDuration:0.4f];
-    [self.messageBubbleView.bubbleImageView addGestureRecognizer:recognizer];
-    [self.messageBubbleView.bubblePhotoImageView addGestureRecognizer:recognizer];
-    
-    UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureRecognizerHandle:)];
-    [self addGestureRecognizer:tapGestureRecognizer];
-    
     [self.messageBubbleView configureCellWithMessage:message];
 }
 
@@ -268,7 +254,7 @@ static const CGFloat kXHBubbleMessageViewPadding = 8;
     if (longPressGestureRecognizer.state != UIGestureRecognizerStateBegan || ![self becomeFirstResponder])
         return;
     
-    UIMenuItem *copy = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringFromTable(@"copy", @"MessageDisplayKitString", @"复制文本消息") action:@selector(copyed:)];
+    UIMenuItem *copy = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringFromTable(@"copy", @"MessageDisplayKitString", @"复制文本消息") action:@selector(copied:)];
     UIMenuItem *transpond = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringFromTable(@"transpond", @"MessageDisplayKitString", @"转发") action:@selector(transpond:)];
     UIMenuItem *favorites = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringFromTable(@"favorites", @"MessageDisplayKitString", @"收藏") action:@selector(favorites:)];
     UIMenuItem *more = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringFromTable(@"more", @"MessageDisplayKitString", @"更多") action:@selector(more:)];
@@ -355,6 +341,13 @@ static const CGFloat kXHBubbleMessageViewPadding = 8;
     self.accessoryType = UITableViewCellAccessoryNone;
     self.accessoryView = nil;
     
+    UILongPressGestureRecognizer *recognizer = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPressGestureRecognizerHandle:)];
+    [recognizer setMinimumPressDuration:0.4f];
+    [self addGestureRecognizer:recognizer];
+    
+    
+    UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureRecognizerHandle:)];
+    [self addGestureRecognizer:tapGestureRecognizer];
 }
 
 - (instancetype)initWithMessage:(id <XHMessageModel>)message
