@@ -227,6 +227,8 @@ static NSString *cellIdentifier = @"ContactCell";
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     AVIMConversation *conversation = [self.conversations objectAtIndex:indexPath.row];
+    [conversation markAsReadInBackground];
+    [self refresh];
     if ([self.chatListDelegate respondsToSelector:@selector(viewController:didSelectConv:)]) {
         [self.chatListDelegate viewController:self didSelectConv:conversation];
     }
