@@ -433,14 +433,7 @@ static NSInteger const kOnePageSize = 10;
 - (void)sendMsg:(AVIMTypedMessage *)msg {
     [[CDChatManager manager] sendMessage:msg conversation:self.conversation callback:^(BOOL succeeded, NSError *error) {
         if (error) {
-            // 伪造一个 messageId，重发的成功的时候，根据这个伪造的id把数据库中的改过来
-            msg.messageId = [[CDChatManager manager] uuid];
             msg.sendTimestamp = [[NSDate date] timeIntervalSince1970] * 1000;
-            if (msg.conversationId == nil) {
-                //文件没有保存上会导致 conversationId 为空
-                msg.clientId = [CDChatManager manager].selfId;
-                msg.conversationId = self.conversation.conversationId;
-            }
             [[CDFailedMessageStore store] insertFailedMessage:msg];
             [[CDSoundManager manager] playSendSoundIfNeed];
             [self insertMessage:msg];
@@ -460,7 +453,6 @@ static NSInteger const kOnePageSize = 10;
 
 - (void)resendMessageAtIndexPath:(NSIndexPath *)indexPath discardIfFailed:(BOOL)discardIfFailed {
     AVIMTypedMessage *msg = self.msgs[indexPath.row];
-    msg.status = AVIMMessageStatusSending;
     [self replaceMesssage:msg atIndexPath:indexPath];
     NSString *recordId = msg.messageId;
     [[CDChatManager manager] sendMessage:msg conversation:self.conversation callback:^(BOOL succeeded, NSError *error) {
@@ -509,7 +501,6 @@ static NSInteger const kOnePageSize = 10;
             }
         }
         if (foundMessage !=nil) {
-            foundMessage.status = AVIMMessageStatusDelivered;
             XHMessage *xhMsg = [self getXHMessageByMsg:foundMessage];
             [self.messages setObject:xhMsg atIndexedSubscript:pos];
             NSIndexPath *indexPath = [NSIndexPath indexPathForRow:pos inSection:0];
@@ -580,11 +571,6 @@ static NSInteger const kOnePageSize = 10;
     NSInteger msgStatuses[4] = { AVIMMessageStatusSending, AVIMMessageStatusSent, AVIMMessageStatusDelivered, AVIMMessageStatusFailed };
     NSInteger xhMessageStatuses[4] = { XHMessageStatusSending, XHMessageStatusSent, XHMessageStatusReceived, XHMessageStatusFailed };
     
-    if (self.conversation.type == CDConversationTypeGroup) {
-        if (msg.status == AVIMMessageStatusSent) {
-            msg.status = AVIMMessageStatusDelivered;
-        }
-    }
     if (xhMessage.bubbleMessageType == XHBubbleMessageTypeSending) {
         XHMessageStatus status = XHMessageStatusReceived;
         int i;
