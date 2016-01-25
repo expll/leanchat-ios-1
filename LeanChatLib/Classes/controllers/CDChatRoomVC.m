@@ -68,7 +68,7 @@ static NSInteger const kOnePageSize = 10;
     [self initBottomMenuAndEmotionView];
     [self.view addSubview:self.clientStatusView];
     // 设置自身用户名
-    id<CDUserModelDelegate> selfUser = [[CDChatManager manager].userDelegate getUserById:[CDChatManager manager].selfId];
+    id<CDUserModelDelegate> selfUser = [[CDChatManager manager].userDelegate getUserById:[CDChatManager manager].clientId];
     self.messageSender = [selfUser username];
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(receiveMessage:) name:kCDNotificationMessageReceived object:nil];
@@ -562,7 +562,7 @@ static NSInteger const kOnePageSize = 10;
     xhMessage.avator = nil;
     xhMessage.avatorUrl = [fromUser avatarUrl];
     
-    if ([[CDChatManager manager].selfId isEqualToString:msg.clientId]) {
+    if ([[CDChatManager manager].clientId isEqualToString:msg.clientId]) {
         xhMessage.bubbleMessageType = XHBubbleMessageTypeSending;
     }
     else {

@@ -37,7 +37,7 @@
 
 - (void)loadDataSource {
     NSMutableSet *userIds = [NSMutableSet setWithArray:self.conversation.members];
-    [userIds removeObject:[CDChatManager manager].selfId];
+    [userIds removeObject:[CDChatManager manager].clientId];
     [self showProgress];
     [[CDCacheManager manager] cacheUsersWithIds:userIds callback:^(BOOL succeeded, NSError *error) {
         [self hideProgress];

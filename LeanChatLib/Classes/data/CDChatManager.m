@@ -23,7 +23,7 @@ static CDChatManager *instance;
 @property (nonatomic, strong) NSString *plistPath;
 @property (nonatomic, strong) NSMutableDictionary *conversationDatas;
 @property (nonatomic, assign) NSInteger totalUnreadCount;
-@property (nonatomic, strong) AVIMClient *myClient;
+
 @end
 
 @implementation CDChatManager
@@ -65,8 +65,8 @@ static CDChatManager *instance;
 }
 
 - (void)openWithClientId:(NSString *)clientId callback:(AVIMBooleanResultBlock)callback {
-    _selfId = clientId;
-    NSString *dbPath = [self databasePathWithUserId:_selfId];
+    _clientId = clientId;
+    NSString *dbPath = [self databasePathWithUserId:_clientId];
     [[CDConversationStore store] setupStoreWithDatabasePath:dbPath];
     [[CDFailedMessageStore store] setupStoreWithDatabasePath:dbPath];
     _client = [[AVIMClient alloc] initWithClientId:clientId];
@@ -112,7 +112,7 @@ static CDChatManager *instance;
 }
 
 - (void)fetchConversationWithMembers:(NSArray *)members type:(CDConversationType)type callback:(AVIMConversationResultBlock)callback {
-    if ([members containsObject:self.selfId] == NO) {
+    if ([members containsObject:self.clientId] == NO) {
         [NSException raise:NSInvalidArgumentException format:@"members should contain myself"];
     }
     [self checkDuplicateValueOfArray:members];
@@ -158,7 +158,7 @@ static CDChatManager *instance;
 - (void)findGroupedConversationsWithNetworkFirst:(BOOL)networkFirst block:(AVIMArrayResultBlock)block {
     AVIMConversationQuery *q = [_client conversationQuery];
     [q whereKey:AVIMAttr(CONVERSATION_TYPE) equalTo:@(CDConversationTypeGroup)];
-    [q whereKey:kAVIMKeyMember containedIn:@[self.selfId]];
+    [q whereKey:kAVIMKeyMember containedIn:@[self.clientId]];
     if (networkFirst) {
         q.cachePolicy = kAVCachePolicyNetworkElseCache;
     } else {
@@ -196,7 +196,7 @@ static CDChatManager *instance;
 #pragma mark - utils
 
 - (void)sendMessage:(AVIMTypedMessage*)message conversation:(AVIMConversation *)conversation callback:(AVBooleanResultBlock)block {
-    id<CDUserModelDelegate> selfUser = [[CDChatManager manager].userDelegate getUserById:self.selfId];
+    id<CDUserModelDelegate> selfUser = [[CDChatManager manager].userDelegate getUserById:self.clientId];
     NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
     // 云代码中获取到用户名，来设置推送消息, 老王:今晚约吗？
     if (selfUser.username) {
@@ -361,9 +361,9 @@ static CDChatManager *instance;
 
 #pragma mark - signature
 
-- (id)conversationSignWithSelfId:(NSString *)selfId conversationId:(NSString *)conversationId targetIds:(NSArray *)targetIds action:(NSString *)action {
+- (id)conversationSignWithSelfId:(NSString *)clientId conversationId:(NSString *)conversationId targetIds:(NSArray *)targetIds action:(NSString *)action {
     NSMutableDictionary *dict = [NSMutableDictionary dictionary];
-    [dict setObject:selfId forKey:@"self_id"];
+    [dict setObject:clientId forKey:@"self_id"];
     if (conversationId) {
         [dict setObject:conversationId forKey:@"convid"];
     }
@@ -559,7 +559,7 @@ static CDChatManager *instance;
         return NO;
     } else {
         NSString *text = ((AVIMTextMessage *)message).text;
-        id<CDUserModelDelegate> selfUser = [[CDChatManager manager].userDelegate getUserById:self.selfId];
+        id<CDUserModelDelegate> selfUser = [[CDChatManager manager].userDelegate getUserById:self.clientId];
         NSString *pattern = [NSString stringWithFormat:@"@%@ ",selfUser.username];
         if([text rangeOfString:pattern].length > 0) {
             return YES;
