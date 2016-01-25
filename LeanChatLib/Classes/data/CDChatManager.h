@@ -60,6 +60,11 @@ typedef void (^CDRecentConversationsCallback)(NSArray *conversations, NSInteger 
  */
 @interface CDChatManager : NSObject
 
+/*!
+ * AVIMClient 实例
+ */
+@property (nonatomic, strong) AVIMClient *client;
+
 /**
  *  设置用户信息的 delegate
  */
@@ -68,7 +73,7 @@ typedef void (^CDRecentConversationsCallback)(NSArray *conversations, NSInteger 
 /**
  *  即 openClient 时的 clientId
  */
-@property (nonatomic, strong, readonly) NSString *selfId;
+@property (nonatomic, strong, readonly) NSString *clientId;
 
 /**
  *  是否和聊天服务器连通

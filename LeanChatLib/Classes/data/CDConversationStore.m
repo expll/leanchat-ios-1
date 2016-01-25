@@ -10,6 +10,7 @@
 #import <FMDB/FMDB.h>
 #import "AVIMConversation+Custom.h"
 #import "CDMacros.h"
+#import "CDChatManager.h"
 
 #define kCDConversationTableName @"conversations"
 
@@ -106,7 +107,7 @@
 
 - (AVIMConversation *)conversationFromData:(NSData *)data{
     AVIMKeyedConversation *keyedConversation = [NSKeyedUnarchiver unarchiveObjectWithData:data];
-    return [[AVIMClient defaultClient] conversationWithKeyedConversation:keyedConversation];
+    return [[CDChatManager manager].client conversationWithKeyedConversation:keyedConversation];
 }
 
 - (void)updateUnreadCountToZeroWithConversation:(AVIMConversation *)conversation {

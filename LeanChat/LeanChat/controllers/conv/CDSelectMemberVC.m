@@ -9,7 +9,7 @@
 #import "CDSelectMemberVC.h"
 #import "CDUserManager.h"
 #import "CDCacheManager.h"
-
+#import "CDChatManager.h"
 #import "CDImageLabelTableCell.h"
 
 @interface CDSelectMemberVC ()
@@ -37,7 +37,7 @@
 
 - (void)loadDataSource {
     NSMutableSet *userIds = [NSMutableSet setWithArray:self.conversation.members];
-    [userIds removeObject:[AVIMClient defaultClient].clientId];
+    [userIds removeObject:[CDChatManager manager].clientId];
     [self showProgress];
     [[CDCacheManager manager] cacheUsersWithIds:userIds callback:^(BOOL succeeded, NSError *error) {
         [self hideProgress];

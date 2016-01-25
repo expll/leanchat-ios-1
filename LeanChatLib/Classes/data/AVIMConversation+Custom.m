@@ -69,7 +69,7 @@
         return members[0];
     }
     NSString *otherId;
-    if ([members[0] isEqualToString:[CDChatManager manager].selfId]) {
+    if ([members[0] isEqualToString:[CDChatManager manager].clientId]) {
         otherId = members[1];
     } else {
         otherId = members[0];
