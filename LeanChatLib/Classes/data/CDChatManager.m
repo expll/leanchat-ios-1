@@ -23,7 +23,7 @@ static CDChatManager *instance;
 @property (nonatomic, strong) NSString *plistPath;
 @property (nonatomic, strong) NSMutableDictionary *conversationDatas;
 @property (nonatomic, assign) NSInteger totalUnreadCount;
-
+@property (nonatomic, strong) AVIMClient *myClient;
 @end
 
 @implementation CDChatManager
@@ -49,7 +49,7 @@ static CDChatManager *instance;
         // 以下选项也即是说 A 不在线时，有人往A发了很多条消息，下次启动时，不再收到具体的离线消息，而是收到离线消息的数目(未读通知)
         // [AVIMClient setUserOptions:@{AVIMUserOptionUseUnread:@(YES)}];
         
-        [AVIMClient defaultClient].delegate =self;
+        _client.delegate =self;
         /* 取消下面的注释，将对 im的 open ，start(create conv),kick,invite 操作签名，更安全
          可以从你的服务器获得签名，这里从云代码获取，需要部署云代码，https://github.com/leancloud/leanchat-cloudcode
          */
@@ -69,7 +69,8 @@ static CDChatManager *instance;
     NSString *dbPath = [self databasePathWithUserId:_selfId];
     [[CDConversationStore store] setupStoreWithDatabasePath:dbPath];
     [[CDFailedMessageStore store] setupStoreWithDatabasePath:dbPath];
-    [[AVIMClient defaultClient] openWithClientId:clientId callback:^(BOOL succeeded, NSError *error) {
+    _client = [[AVIMClient alloc] initWithClientId:clientId];
+    [_client openWithCallback:^(BOOL succeeded, NSError *error) {
         [self updateConnectStatus];
         if (callback) {
             callback(succeeded, error);
@@ -79,14 +80,14 @@ static CDChatManager *instance;
 }
 
 - (void)closeWithCallback:(AVBooleanResultBlock)callback {
-    [[AVIMClient defaultClient] closeWithCallback:callback];
+    [_client closeWithCallback:callback];
 }
 
 #pragma mark - conversation
 
 - (void)fecthConversationWithConversationId:(NSString *)conversationId callback:(AVIMConversationResultBlock)callback {
     NSAssert(conversationId.length > 0, @"Conversation id is nil");
-    AVIMConversationQuery *q = [[AVIMClient defaultClient] conversationQuery];
+    AVIMConversationQuery *q = [_client conversationQuery];
     q.cachePolicy = kAVCachePolicyNetworkElseCache;
     [q whereKey:@"objectId" equalTo:conversationId];
     [q findConversationsWithCallback: ^(NSArray *objects, NSError *error) {
@@ -124,7 +125,7 @@ static CDChatManager *instance;
 
 - (void)fetchConversationWithOtherId:(NSString *)otherId callback:(AVIMConversationResultBlock)callback {
     NSMutableArray *array = [[NSMutableArray alloc] init];
-    [array addObject:[AVIMClient defaultClient].clientId];
+    [array addObject:_client.clientId];
     [array addObject:otherId];
     [self fetchConversationWithMembers:array type:CDConversationTypeSingle callback:callback];
 }
@@ -143,7 +144,7 @@ static CDChatManager *instance;
         // 创建一个新对话
         options = AVIMConversationOptionNone;
     }
-    [[AVIMClient defaultClient] createConversationWithName:name clientIds:members attributes:@{ CONVERSATION_TYPE:@(type) } options:options callback:callback];
+    [_client createConversationWithName:name clientIds:members attributes:@{ CONVERSATION_TYPE:@(type) } options:options callback:callback];
 }
 
 - (void)createConversationWithMembers:(NSArray *)members type:(CDConversationType)type callback:(AVIMConversationResultBlock)callback {
@@ -155,7 +156,7 @@ static CDChatManager *instance;
 }
 
 - (void)findGroupedConversationsWithNetworkFirst:(BOOL)networkFirst block:(AVIMArrayResultBlock)block {
-    AVIMConversationQuery *q = [[AVIMClient defaultClient] conversationQuery];
+    AVIMConversationQuery *q = [_client conversationQuery];
     [q whereKey:AVIMAttr(CONVERSATION_TYPE) equalTo:@(CDConversationTypeGroup)];
     [q whereKey:kAVIMKeyMember containedIn:@[self.selfId]];
     if (networkFirst) {
@@ -182,7 +183,7 @@ static CDChatManager *instance;
 
 - (void)fetchConversationsWithConversationIds:(NSSet *)conversationIds callback:(AVIMArrayResultBlock)callback {
     if (conversationIds.count > 0) {
-        AVIMConversationQuery *q = [[AVIMClient defaultClient] conversationQuery];
+        AVIMConversationQuery *q = [_client conversationQuery];
         [q whereKey:@"objectId" containedIn:[conversationIds allObjects]];
         q.cachePolicy = kAVCachePolicyNetworkElseCache;
         q.limit = 1000;  // default limit:10
@@ -274,7 +275,7 @@ static CDChatManager *instance;
 
 // 除了 sdk 的上面三个回调调用了，还在 open client 的时候调用了，好统一处理
 - (void)updateConnectStatus {
-    self.connect = [AVIMClient defaultClient].status == AVIMClientStatusOpened;
+    self.connect = _client.status == AVIMClientStatusOpened;
     [[NSNotificationCenter defaultCenter] postNotificationName:kCDNotificationConnectivityUpdated object:@(self.connect)];
 }
 
@@ -470,7 +471,7 @@ static CDChatManager *instance;
 
 - (AVIMConversation *)lookupConversationById:(NSString *)conversationId {
     //FIXME:the convid is not exist in the table when log out
-    AVIMConversation *conversation = [[AVIMClient defaultClient] conversationForId:conversationId];
+    AVIMConversation *conversation = [_client conversationForId:conversationId];
     return conversation;
 }
 
