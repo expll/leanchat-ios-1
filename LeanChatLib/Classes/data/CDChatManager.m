@@ -48,12 +48,6 @@ static CDChatManager *instance;
         [AVIMClient setTimeoutIntervalInSeconds:20];
         // 以下选项也即是说 A 不在线时，有人往A发了很多条消息，下次启动时，不再收到具体的离线消息，而是收到离线消息的数目(未读通知)
         // [AVIMClient setUserOptions:@{AVIMUserOptionUseUnread:@(YES)}];
-        
-        _client.delegate =self;
-        /* 取消下面的注释，将对 im的 open ，start(create conv),kick,invite 操作签名，更安全
-         可以从你的服务器获得签名，这里从云代码获取，需要部署云代码，https://github.com/leancloud/leanchat-cloudcode
-         */
-        //        _imClient.signatureDataSource = self;
         _cachedConversations = [NSMutableDictionary dictionary];
     }
     return self;
@@ -69,8 +63,13 @@ static CDChatManager *instance;
     NSString *dbPath = [self databasePathWithUserId:_clientId];
     [[CDConversationStore store] setupStoreWithDatabasePath:dbPath];
     [[CDFailedMessageStore store] setupStoreWithDatabasePath:dbPath];
-    _client = [[AVIMClient alloc] initWithClientId:clientId];
-    [_client openWithCallback:^(BOOL succeeded, NSError *error) {
+    self.client = [[AVIMClient alloc] initWithClientId:clientId];
+    self.client.delegate = self;
+    /* 取消下面的注释，将对 im的 open ，start(create conv),kick,invite 操作签名，更安全
+     可以从你的服务器获得签名，这里从云代码获取，需要部署云代码，https://github.com/leancloud/leanchat-cloudcode
+     */
+    // self.client.signatureDataSource = self;
+    [self.client openWithCallback:^(BOOL succeeded, NSError *error) {
         [self updateConnectStatus];
         if (callback) {
             callback(succeeded, error);
@@ -80,21 +79,20 @@ static CDChatManager *instance;
 }
 
 - (void)closeWithCallback:(AVBooleanResultBlock)callback {
-    [_client closeWithCallback:callback];
+    [self.client closeWithCallback:callback];
 }
 
 #pragma mark - conversation
 
 - (void)fecthConversationWithConversationId:(NSString *)conversationId callback:(AVIMConversationResultBlock)callback {
     NSAssert(conversationId.length > 0, @"Conversation id is nil");
-    AVIMConversationQuery *q = [_client conversationQuery];
+    AVIMConversationQuery *q = [self.client conversationQuery];
     q.cachePolicy = kAVCachePolicyNetworkElseCache;
     [q whereKey:@"objectId" equalTo:conversationId];
     [q findConversationsWithCallback: ^(NSArray *objects, NSError *error) {
         if (error) {
             callback(nil, error);
-        }
-        else {
+        } else {
             if (objects.count == 0) {
                 callback(nil, [CDChatManager errorWithText:[NSString stringWithFormat:@"conversation of %@ not exists", conversationId]]);
             } else {
@@ -125,7 +123,7 @@ static CDChatManager *instance;
 
 - (void)fetchConversationWithOtherId:(NSString *)otherId callback:(AVIMConversationResultBlock)callback {
     NSMutableArray *array = [[NSMutableArray alloc] init];
-    [array addObject:_client.clientId];
+    [array addObject:self.client.clientId];
     [array addObject:otherId];
     [self fetchConversationWithMembers:array type:CDConversationTypeSingle callback:callback];
 }
@@ -144,7 +142,7 @@ static CDChatManager *instance;
         // 创建一个新对话
         options = AVIMConversationOptionNone;
     }
-    [_client createConversationWithName:name clientIds:members attributes:@{ CONVERSATION_TYPE:@(type) } options:options callback:callback];
+    [self.client createConversationWithName:name clientIds:members attributes:@{ CONVERSATION_TYPE:@(type) } options:options callback:callback];
 }
 
 - (void)createConversationWithMembers:(NSArray *)members type:(CDConversationType)type callback:(AVIMConversationResultBlock)callback {
@@ -156,7 +154,7 @@ static CDChatManager *instance;
 }
 
 - (void)findGroupedConversationsWithNetworkFirst:(BOOL)networkFirst block:(AVIMArrayResultBlock)block {
-    AVIMConversationQuery *q = [_client conversationQuery];
+    AVIMConversationQuery *q = [self.client conversationQuery];
     [q whereKey:AVIMAttr(CONVERSATION_TYPE) equalTo:@(CDConversationTypeGroup)];
     [q whereKey:kAVIMKeyMember containedIn:@[self.clientId]];
     if (networkFirst) {
@@ -183,7 +181,7 @@ static CDChatManager *instance;
 
 - (void)fetchConversationsWithConversationIds:(NSSet *)conversationIds callback:(AVIMArrayResultBlock)callback {
     if (conversationIds.count > 0) {
-        AVIMConversationQuery *q = [_client conversationQuery];
+        AVIMConversationQuery *q = [self.client conversationQuery];
         [q whereKey:@"objectId" containedIn:[conversationIds allObjects]];
         q.cachePolicy = kAVCachePolicyNetworkElseCache;
         q.limit = 1000;  // default limit:10
@@ -275,7 +273,7 @@ static CDChatManager *instance;
 
 // 除了 sdk 的上面三个回调调用了，还在 open client 的时候调用了，好统一处理
 - (void)updateConnectStatus {
-    self.connect = _client.status == AVIMClientStatusOpened;
+    self.connect = self.client.status == AVIMClientStatusOpened;
     [[NSNotificationCenter defaultCenter] postNotificationName:kCDNotificationConnectivityUpdated object:@(self.connect)];
 }
 
@@ -283,7 +281,7 @@ static CDChatManager *instance;
 
 - (void)receiveMessage:(AVIMTypedMessage *)message conversation:(AVIMConversation *)conversation{
     [[CDConversationStore store] insertConversation:conversation];
-    if ([self.chattingConversationId isEqualToString:conversation.conversationId] == NO) {
+    if (![self.chattingConversationId isEqualToString:conversation.conversationId]) {
         // 没有在聊天的时候才增加未读数和设置mentioned
         [[CDConversationStore store] increaseUnreadCountWithConversation:conversation];
         if ([self isMentionedByMessage:message]) {
@@ -291,8 +289,8 @@ static CDChatManager *instance;
         }
         [[NSNotificationCenter defaultCenter] postNotificationName:kCDNotificationUnreadsUpdated object:nil];
     }
-    if (self.chattingConversationId == nil) {
-        if (conversation.muted == NO) {
+    if (!self.chattingConversationId) {
+        if (!conversation.muted) {
             [[CDSoundManager manager] playLoudReceiveSoundIfNeed];
             [[CDSoundManager manager] vibrateIfNeed];
         }
@@ -357,6 +355,15 @@ static CDChatManager *instance;
 
 - (void)conversation:(AVIMConversation *)conversation kickedByClientId:(NSString *)clientId {
     DLog();
+}
+
+/* 如果开启了单点登陆，需要使用代码方法进行监控 */
+- (void)client:(AVIMClient *)client didOfflineWithError:(NSError *)error {
+    if ([error code] == 4111) {
+        //适当的弹出友好提示，告知当前用户的 Client Id 在其他设备上登陆了
+        UIAlertView *alert = [[UIAlertView alloc]initWithTitle:@"提示" message:@"检测到您已在其他设备登录，请重新登录" delegate:self cancelButtonTitle:@"知道了" otherButtonTitles:nil, nil];
+        [alert show];
+    }
 }
 
 #pragma mark - signature
@@ -471,7 +478,7 @@ static CDChatManager *instance;
 
 - (AVIMConversation *)lookupConversationById:(NSString *)conversationId {
     //FIXME:the convid is not exist in the table when log out
-    AVIMConversation *conversation = [_client conversationForId:conversationId];
+    AVIMConversation *conversation = [self.client conversationForId:conversationId];
     return conversation;
 }
 
