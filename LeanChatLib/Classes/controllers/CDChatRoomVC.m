@@ -29,6 +29,7 @@ static NSInteger const kOnePageSize = 10;
 
 @property (nonatomic, strong, readwrite) AVIMConversation *conversation;
 @property (atomic, assign) BOOL isLoadingMsg;
+//TODO:msgs and messages are repeated
 @property (nonatomic, strong, readwrite) NSMutableArray *msgs;
 @property (nonatomic, strong) XHMessageTableViewCell *currentSelectedCell;
 @property (nonatomic, strong) NSArray *emotionManagers;
@@ -107,7 +108,7 @@ static NSInteger const kOnePageSize = 10;
 - (void)initBarButton {
     UIBarButtonItem *backBtn = [[UIBarButtonItem alloc] initWithTitle:@"返回" style:UIBarButtonItemStylePlain target:nil action:nil];
     [self.navigationItem setBackBarButtonItem:backBtn];
-//    self.navigationItem.backBarButtonItem.title
+    //    self.navigationItem.backBarButtonItem.title
 }
 
 - (void)initBottomMenuAndEmotionView {
@@ -258,7 +259,10 @@ static NSInteger const kOnePageSize = 10;
 
 //发送文本消息的回调方法
 - (void)didSendText:(NSString *)text fromSender:(NSString *)sender onDate:(NSDate *)date {
-    if ([text length] > 0) {
+    if ([CDChatManager manager].client.status != AVIMClientStatusOpened) {
+        return;
+    }
+    if ([text length] > 0 ) {
         AVIMTextMessage *msg = [AVIMTextMessage messageWithText:[CDEmotionUtils plainStringFromEmojiString:text] attributes:nil];
         [self sendMsg:msg];
         [self finishSendMessageWithBubbleMessageType:XHBubbleMessageMediaTypeText];
@@ -267,24 +271,37 @@ static NSInteger const kOnePageSize = 10;
 
 //发送图片消息的回调方法
 - (void)didSendPhoto:(UIImage *)photo fromSender:(NSString *)sender onDate:(NSDate *)date {
+    if ([CDChatManager manager].client.status != AVIMClientStatusOpened) {
+        return;
+    }
     [self sendImage:photo];
     [self finishSendMessageWithBubbleMessageType:XHBubbleMessageMediaTypePhoto];
 }
 
 // 发送视频消息的回调方法
 - (void)didSendVideoConverPhoto:(UIImage *)videoConverPhoto videoPath:(NSString *)videoPath fromSender:(NSString *)sender onDate:(NSDate *)date {
+    if ([CDChatManager manager].client.status != AVIMClientStatusOpened) {
+        return;
+    }
     AVIMVideoMessage *sendVideoMessage = [AVIMVideoMessage messageWithText:nil attachedFilePath:videoPath attributes:nil];
     [self sendMsg:sendVideoMessage];
 }
 
 // 发送语音消息的回调方法
 - (void)didSendVoice:(NSString *)voicePath voiceDuration:(NSString *)voiceDuration fromSender:(NSString *)sender onDate:(NSDate *)date {
+    if ([CDChatManager manager].client.status != AVIMClientStatusOpened) {
+        return;
+    }
     AVIMTypedMessage *msg = [AVIMAudioMessage messageWithText:nil attachedFilePath:voicePath attributes:nil];
     [self sendMsg:msg];
+    
 }
 
 // 发送表情消息的回调方法
 - (void)didSendEmotion:(NSString *)emotion fromSender:(NSString *)sender onDate:(NSDate *)date {
+    if ([CDChatManager manager].client.status != AVIMClientStatusOpened) {
+        return;
+    }
     if ([emotion hasPrefix:@":"]) {
         // 普通表情
         UITextView *textView = self.messageInputView.inputTextView;
@@ -303,6 +320,9 @@ static NSInteger const kOnePageSize = 10;
 }
 
 - (void)didSendGeoLocationsPhoto:(UIImage *)geoLocationsPhoto geolocations:(NSString *)geolocations location:(CLLocation *)location fromSender:(NSString *)sender onDate:(NSDate *)date {
+    if ([CDChatManager manager].client.status != AVIMClientStatusOpened) {
+        return;
+    }
     [self finishSendMessageWithBubbleMessageType:XHBubbleMessageMediaTypeLocalPosition];
 }
 
@@ -373,11 +393,9 @@ static NSInteger const kOnePageSize = 10;
     if (error) {
         if (error.code == kAVIMErrorConnectionLost) {
             [self alert:@"未能连接聊天服务"];
-        }
-        else if ([error.domain isEqualToString:NSURLErrorDomain]) {
+        } else if ([error.domain isEqualToString:NSURLErrorDomain]) {
             [self alert:@"网络连接发生错误"];
-        }
-        else {
+        } else {
             [self alert:[NSString stringWithFormat:@"%@", error]];
         }
         return YES;
@@ -398,7 +416,7 @@ static NSInteger const kOnePageSize = 10;
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), queue);
 }
 
-#pragma mark - LeanCloud 
+#pragma mark - LeanCloud
 
 #pragma mark - conversations store
 
@@ -419,8 +437,7 @@ static NSInteger const kOnePageSize = 10;
     if (error == nil) {
         AVIMImageMessage *msg = [AVIMImageMessage messageWithText:nil attachedFilePath:path attributes:nil];
         [self sendMsg:msg];
-    }
-    else {
+    } else {
         [self alert:@"write image to file error"];
     }
 }
@@ -466,8 +483,7 @@ static NSInteger const kOnePageSize = 10;
                 [self alertError:error];
                 [self replaceMesssage:msg atIndexPath:indexPath];
             }
-        }
-        else {
+        } else {
             [[CDFailedMessageStore store] deleteFailedMessageByRecordId:recordId];
             [self replaceMesssage:msg atIndexPath:indexPath];
         }
@@ -483,8 +499,8 @@ static NSInteger const kOnePageSize = 10;
             [[CDSoundManager manager] playReceiveSoundIfNeed];
         }
         [self insertMessage:message];
-//        [[CDChatManager manager] setZeroUnreadWithConversationId:self.conversation.conversationId];
-//        [[NSNotificationCenter defaultCenter] postNotificationName:kCDNotificationMessageReceived object:nil];
+        //        [[CDChatManager manager] setZeroUnreadWithConversationId:self.conversation.conversationId];
+        //        [[NSNotificationCenter defaultCenter] postNotificationName:kCDNotificationMessageReceived object:nil];
     }
 }
 

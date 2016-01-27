@@ -107,11 +107,13 @@
 
 - (void)insertFailedMessage:(AVIMTypedMessage *)message {
     if (message.conversationId == nil) {
-        [NSException raise:@"conversationId is nil" format:nil];
+        @throw [NSException exceptionWithName:NSGenericException
+                                       reason:@"conversationId is nil"
+                                     userInfo:nil];
     }
     NSData *data = [NSKeyedArchiver archivedDataWithRootObject:message];
     [self.databaseQueue inDatabase:^(FMDatabase *db) {
-        [db executeUpdate:kCDInsertMessageSQL,message.messageId, message.conversationId, data];
+        [db executeUpdate:kCDInsertMessageSQL, message.messageId, message.conversationId, data];
     }];
 }
 

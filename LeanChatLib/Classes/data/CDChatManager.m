@@ -47,7 +47,7 @@ static CDChatManager *instance;
     if (self) {
         [AVIMClient setTimeoutIntervalInSeconds:20];
         // 以下选项也即是说 A 不在线时，有人往A发了很多条消息，下次启动时，不再收到具体的离线消息，而是收到离线消息的数目(未读通知)
-        // [AVIMClient setUserOptions:@{AVIMUserOptionUseUnread:@(YES)}];
+//         [AVIMClient setUserOptions:@{AVIMUserOptionUseUnread:@(YES)}];
         _cachedConversations = [NSMutableDictionary dictionary];
     }
     return self;
@@ -194,6 +194,10 @@ static CDChatManager *instance;
 #pragma mark - utils
 
 - (void)sendMessage:(AVIMTypedMessage*)message conversation:(AVIMConversation *)conversation callback:(AVBooleanResultBlock)block {
+    if (self.client.status != AVIMClientStatusOpened) {
+            NSString *errorReasonText = @"client status is not opened";
+            DLog(@"%@", errorReasonText);
+    }
     id<CDUserModelDelegate> selfUser = [[CDChatManager manager].userDelegate getUserById:self.clientId];
     NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
     // 云代码中获取到用户名，来设置推送消息, 老王:今晚约吗？
