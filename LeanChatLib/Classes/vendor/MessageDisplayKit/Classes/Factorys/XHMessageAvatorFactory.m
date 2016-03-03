@@ -11,7 +11,7 @@
 
 @implementation XHMessageAvatorFactory
 
-+ (UIImage *)avatarImageNamed:(UIImage *)originImage
++ (UIImage *)avatorImageNamed:(UIImage *)originImage
             messageAvatorType:(XHMessageAvatorType)messageAvatorType {
     CGFloat radius = 0.0;
     switch (messageAvatorType) {

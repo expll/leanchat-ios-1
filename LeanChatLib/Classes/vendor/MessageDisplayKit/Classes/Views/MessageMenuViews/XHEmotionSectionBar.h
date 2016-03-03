@@ -25,7 +25,7 @@
 
 @interface XHEmotionSectionBar : UIView
 
-@property (nonatomic, weak) id <XHEmotionSectionBarDelegate> delegate;
+@property (nonatomic, weak) id<XHEmotionSectionBarDelegate> delegate;
 
 /**
  *  数据源

@@ -10,12 +10,12 @@
 
 #import "XHMessageBubbleHelper.h"
 
-#define kMarginTop 8.0f
-#define kMarginBottom 2.0f
-#define kPaddingTop 12.0f
-#define kBubblePaddingRight 14.0f
-
-#define kVoiceMargin 20.0f
+static CGFloat const kMarginTop = 8.0f;
+static CGFloat const kMarginBottom = 2.0f;
+//气泡内部与文字TextView的顶端的距离
+static CGFloat const kPaddingTop = 12.0f;
+static CGFloat const kBubblePaddingRight = 14.0f;
+static CGFloat const kVoiceMargin = 20.0f;
 
 #define kXHArrowMarginWidth 14
 
@@ -37,7 +37,7 @@
 
 @property (nonatomic, weak, readwrite) UILabel *geolocationsLabel;
 
-@property (nonatomic, strong, readwrite) id <XHMessageModel> message;
+@property (nonatomic, strong, readwrite) id<XHMessageModel> message;
 
 @end
 
@@ -78,12 +78,13 @@
     return voiceSize;
 }
 
-+ (CGFloat)calculateCellHeightWithMessage:(id <XHMessageModel>)message {
++ (CGFloat)calculateCellHeightWithMessage:(id<XHMessageModel>)message {
     CGSize size = [XHMessageBubbleView getBubbleFrameWithMessage:message];
-    return size.height + kMarginTop + kMarginBottom;
+    CGFloat cellHeight = size.height + kMarginTop + kMarginBottom + kPaddingTop;
+    return cellHeight;
 }
 
-+ (CGSize)getBubbleFrameWithMessage:(id <XHMessageModel>)message {
++ (CGSize)getBubbleFrameWithMessage:(id<XHMessageModel>)message {
     CGSize bubbleSize;
     switch (message.messageMediaType) {
         case XHBubbleMessageMediaTypeText: {
@@ -145,7 +146,7 @@
 
 #pragma mark - Life cycle
 
-- (void)configureCellWithMessage:(id <XHMessageModel>)message {
+- (void)configureCellWithMessage:(id<XHMessageModel>)message {
     _message = message;
     
     [self configureBubbleImageView:message];
@@ -153,7 +154,7 @@
     [self configureMessageDisplayMediaWithMessage:message];
 }
 
-- (void)configureBubbleImageView:(id <XHMessageModel>)message {
+- (void)configureBubbleImageView:(id<XHMessageModel>)message {
     XHBubbleMessageMediaType currentType = message.messageMediaType;
     
     _voiceDurationLabel.hidden = YES;
@@ -224,7 +225,7 @@
     }
 }
 
-- (void)configureMessageDisplayMediaWithMessage:(id <XHMessageModel>)message {
+- (void)configureMessageDisplayMediaWithMessage:(id<XHMessageModel>)message {
     switch (message.messageMediaType) {
         case XHBubbleMessageMediaTypeText:
             _displayTextView.attributedText = [[XHMessageBubbleHelper sharedMessageBubbleHelper] bubbleAttributtedStringWithText:[message text]];
@@ -258,7 +259,7 @@
 }
 
 - (instancetype)initWithFrame:(CGRect)frame
-                      message:(id <XHMessageModel>)message {
+                      message:(id<XHMessageModel>)message {
     self = [super initWithFrame:frame];
     if (self) {
         // Initialization code

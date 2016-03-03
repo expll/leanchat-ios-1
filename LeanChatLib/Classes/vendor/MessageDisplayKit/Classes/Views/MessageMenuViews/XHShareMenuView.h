@@ -32,7 +32,7 @@
  */
 @property (nonatomic, strong) NSArray *shareMenuItems;
 
-@property (nonatomic, weak) id <XHShareMenuViewDelegate> delegate;
+@property (nonatomic, weak) id<XHShareMenuViewDelegate> delegate;
 
 /**
  *  根据数据源刷新第三方功能按钮的布局

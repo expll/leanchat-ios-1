@@ -15,6 +15,9 @@
 
 #import "LKBadgeView.h"
 
+extern NSString *const senderCellIdentifier;
+extern NSString *const receiverCellIdentifier;
+
 @class XHMessageTableViewCell;
 
 @protocol XHMessageTableViewCellDelegate <NSObject>
@@ -27,7 +30,7 @@
  *  @param indexPath 该目标消息在哪个IndexPath里面
  *  @param messageTableViewCell 目标消息在该Cell上
  */
-- (void)multiMediaMessageDidSelectedOnMessage:(id <XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath onMessageTableViewCell:(XHMessageTableViewCell *)messageTableViewCell;
+- (void)multiMediaMessageDidSelectedOnMessage:(id<XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath onMessageTableViewCell:(XHMessageTableViewCell *)messageTableViewCell;
 
 /**
  *  双击文本消息，触发这个回调
@@ -35,14 +38,14 @@
  *  @param message   被操作的目标消息Model
  *  @param indexPath 该目标消息在哪个IndexPath里面
  */
-- (void)didDoubleSelectedOnTextMessage:(id <XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath;
+- (void)didDoubleSelectedOnTextMessage:(id<XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath;
 
 /**
  *  点击消息发送者的头像回调方法
  *
  *  @param indexPath 该目标消息在哪个IndexPath里面
  */
-- (void)didSelectedAvatorOnMessage:(id <XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath;
+- (void)didSelectedAvatorOnMessage:(id<XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath;
 
 /**
  *  Menu Control Selected Item
@@ -51,13 +54,13 @@
  */
 - (void)menuDidSelectedAtBubbleMessageMenuSelecteType:(XHBubbleMessageMenuSelecteType)bubbleMessageMenuSelecteType;
 
--(void)didRetrySendMessage:(id <XHMessageModel>)message atIndexPath:(NSIndexPath*)indexPath;
+-(void)didRetrySendMessage:(id<XHMessageModel>)message atIndexPath:(NSIndexPath*)indexPath;
 
 @end
 
 @interface XHMessageTableViewCell : XHBaseTableViewCell
 
-@property (nonatomic, weak) id <XHMessageTableViewCellDelegate> delegate;
+@property (nonatomic, weak) id<XHMessageTableViewCellDelegate> delegate;
 
 /**
  *  自定义多媒体消息内容View
@@ -72,7 +75,7 @@
 /**
  *  用户名标签
  */
-@property (nonatomic, weak, readonly) UILabel *userNameLabel;
+@property (nonatomic, weak, readonly) UILabel *peerNameLabel;
 
 /**
  *  时间轴Label
@@ -95,13 +98,11 @@
  *  初始化Cell的方法，必须先调用这个，不然不会初始化显示控件
  *
  *  @param message          需显示的目标消息Model
- *  @param displayTimestamp 预先告知是否需要显示时间轴Label
  *  @param cellIdentifier   重用Cell的标识
  *
  *  @return 返回消息Cell对象
  */
-- (instancetype)initWithMessage:(id <XHMessageModel>)message
-              displaysTimestamp:(BOOL)displayTimestamp
+- (instancetype)initWithMessage:(id<XHMessageModel>)message
                 reuseIdentifier:(NSString *)cellIdentifier;
 
 /**
@@ -110,8 +111,9 @@
  *  @param message          目标消息Model
  *  @param displayTimestamp 配置的时候告知是否需要显示时间轴Label
  */
-- (void)configureCellWithMessage:(id <XHMessageModel>)message
-               displaysTimestamp:(BOOL)displayTimestamp;
+- (void)configureCellWithMessage:(id<XHMessageModel>)message
+               displaysTimestamp:(BOOL)displayTimestamp
+                displaysPeerName:(BOOL)displaysPeerName;
 
 /**
  *  根据消息Model计算Cell的高度
@@ -121,7 +123,8 @@
  *
  *  @return 返回Cell所需要的高度
  */
-+ (CGFloat)calculateCellHeightWithMessage:(id <XHMessageModel>)message
-                        displaysTimestamp:(BOOL)displayTimestamp;
++ (CGFloat)calculateCellHeightWithMessage:(id<XHMessageModel>)message
+                        displaysTimestamp:(BOOL)displayTimestamp
+                         displaysPeerName:(BOOL)displayPeerName;
 
 @end

@@ -94,7 +94,7 @@ typedef NS_ENUM(NSInteger, XHRefreshViewLayerType) {
 
 @interface XHRefreshControl : NSObject
 
-- (id)initWithScrollView:(UIScrollView *)scrollView delegate:(id <XHRefreshControlDelegate>)delegate;
+- (id)initWithScrollView:(UIScrollView *)scrollView delegate:(id<XHRefreshControlDelegate>)delegate;
 
 /**
  *  外部手动启动下拉加载的方法，这个方法不需要手动去拖动UIScrollView

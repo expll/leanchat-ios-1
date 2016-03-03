@@ -28,7 +28,7 @@ typedef NS_ENUM(NSInteger, XHRefreshState) {
 
 @interface XHRefreshControl ()
 
-@property (nonatomic, weak) id <XHRefreshControlDelegate> delegate;
+@property (nonatomic, weak) id<XHRefreshControlDelegate> delegate;
 
 // getter
 @property (nonatomic, strong) XHRefreshView *refreshView;
@@ -336,7 +336,7 @@ typedef NS_ENUM(NSInteger, XHRefreshState) {
     }
 }
 
-- (id)initWithScrollView:(UIScrollView *)scrollView delegate:(id <XHRefreshControlDelegate>)delegate {
+- (id)initWithScrollView:(UIScrollView *)scrollView delegate:(id<XHRefreshControlDelegate>)delegate {
     self = [super init];
     if (self) {
         self.delegate = delegate;

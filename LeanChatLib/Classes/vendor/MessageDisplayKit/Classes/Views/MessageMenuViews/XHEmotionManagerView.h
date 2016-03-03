@@ -58,9 +58,9 @@
 
 @interface XHEmotionManagerView : UIView
 
-@property (nonatomic, weak) id <XHEmotionManagerViewDelegate> delegate;
+@property (nonatomic, weak) id<XHEmotionManagerViewDelegate> delegate;
 
-@property (nonatomic, weak) id <XHEmotionManagerViewDataSource> dataSource;
+@property (nonatomic, weak) id<XHEmotionManagerViewDataSource> dataSource;
 
 /**
  *  是否显示表情商店的按钮

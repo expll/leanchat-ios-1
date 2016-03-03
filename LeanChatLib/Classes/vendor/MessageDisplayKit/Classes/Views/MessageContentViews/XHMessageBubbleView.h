@@ -40,7 +40,7 @@
 /**
  *  目标消息Model对象
  */
-@property (nonatomic, strong, readonly)  id <XHMessageModel> message;
+@property (nonatomic, strong, readonly)  id<XHMessageModel> message;
 
 /**
  *  自定义显示文本消息控件，子类化的原因有两个，第一个是屏蔽Menu的显示。第二是传递手势到下一层，因为文本需要双击的手势
@@ -101,7 +101,7 @@
  *  @return 返回XHMessageBubbleView类型的对象
  */
 - (instancetype)initWithFrame:(CGRect)frame
-                      message:(id <XHMessageModel>)message;
+                      message:(id<XHMessageModel>)message;
 
 /**
  *  获取气泡相对于父试图的位置
@@ -115,7 +115,7 @@
  *
  *  @param message 目标消息Model对象
  */
-- (void)configureCellWithMessage:(id <XHMessageModel>)message;
+- (void)configureCellWithMessage:(id<XHMessageModel>)message;
 
 /**
  *  根据消息Model对象计算消息内容的高度
@@ -124,6 +124,6 @@
  *
  *  @return 返回所需高度
  */
-+ (CGFloat)calculateCellHeightWithMessage:(id <XHMessageModel>)message;
++ (CGFloat)calculateCellHeightWithMessage:(id<XHMessageModel>)message;
 
 @end
