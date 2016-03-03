@@ -7,8 +7,13 @@
 //
 
 #import "XHDisplayTextViewController.h"
+#import "CYLDeallocBlockExecutor.h"
+
+static void * const LCIMDisplayTextViewContentSizeContext = (void*)&LCIMDisplayTextViewContentSizeContext;
 
 @interface XHDisplayTextViewController ()
+
+@property (nonatomic, weak) UIView *backgroundView;
 
 @property (nonatomic, weak) UITextView *displayTextView;
 
@@ -19,16 +24,43 @@
 - (UITextView *)displayTextView {
     if (!_displayTextView) {
         UITextView *displayTextView = [[UITextView alloc] initWithFrame:self.view.frame];
-        displayTextView.font = [UIFont systemFontOfSize:16.0f];
+        displayTextView.font = [UIFont systemFontOfSize:30.0f];
+        [displayTextView addObserver:self forKeyPath:@"contentSize" options:(NSKeyValueObservingOptionNew) context:LCIMDisplayTextViewContentSizeContext];
+        __unsafe_unretained typeof(self) weakSelf = self;
+        [self cyl_executeAtDealloc:^{
+            [displayTextView removeObserver:weakSelf forKeyPath:@"contentSize"];
+        }];
+        displayTextView.contentSize = self.view.bounds.size;
+        displayTextView.textAlignment = NSTextAlignmentCenter;
         displayTextView.textColor = [UIColor blackColor];
-        displayTextView.userInteractionEnabled = YES;
         displayTextView.editable = NO;
-        displayTextView.backgroundColor = [UIColor clearColor];
+        displayTextView.backgroundColor = [UIColor whiteColor];
         displayTextView.dataDetectorTypes = UIDataDetectorTypeAll;
-        [self.view addSubview:displayTextView];
+        displayTextView.textContainerInset = UIEdgeInsetsMake(0,20,0,20);
+        [self.backgroundView addSubview:displayTextView];
         _displayTextView = displayTextView;
     }
     return _displayTextView;
+}
+
+/**
+ *  lazy load backgroundView
+ *
+ *  @return UIView
+ */
+- (UIView *)backgroundView {
+    if (_backgroundView == nil) {
+        UIView *backgroundView = [[UIView alloc] initWithFrame:self.view.frame];
+        backgroundView.backgroundColor = [UIColor blueColor];
+        UITapGestureRecognizer *recognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(removeFromWindow:)];
+        [backgroundView addGestureRecognizer:recognizer];
+        [self.view addSubview:backgroundView];
+        _backgroundView = backgroundView;
+    }
+    return _backgroundView;
+}
+- (void)removeFromWindow:(UITapGestureRecognizer *)tapGestureRecognizer {
+    [self.navigationController popViewControllerAnimated:NO];
 }
 
 - (void)setMessage:(id<XHMessageModel>)message {
@@ -36,21 +68,38 @@
     self.displayTextView.text = [message text];
 }
 
+- (BOOL)prefersStatusBarHidden {
+    return YES;
+}
+
 #pragma mark - Life cycle
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view.
     self.title = NSLocalizedStringFromTable(@"TextDetail", @"MessageDisplayKitString", @"文本消息");
 }
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+- (void)viewWillDisappear:(BOOL)animated {
+    [self.navigationController setNavigationBarHidden:NO animated:animated];
+    [super viewWillDisappear:animated];
 }
 
-- (void)dealloc {
-    self.displayTextView = nil;
+- (void)viewWillAppear:(BOOL)animated {
+    [self.navigationController setNavigationBarHidden:YES animated:animated];
+    [super viewWillAppear:animated];
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+    if(context != LCIMDisplayTextViewContentSizeContext) {
+        [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+        return;
+    }
+    if(context == LCIMDisplayTextViewContentSizeContext) {
+        UITextView *textView = object;
+        CGFloat topCorrect = ([textView bounds].size.height - [textView contentSize].height * [textView zoomScale])/2.0;
+        topCorrect = ( topCorrect < 0.0 ? 0.0 : topCorrect );
+        [textView setContentInset:UIEdgeInsetsMake(topCorrect,0,0,0)];
+    }
 }
 
 @end

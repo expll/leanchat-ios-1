@@ -103,6 +103,15 @@
 - (BOOL)shouldDisplayTimestampForRowAtIndexPath:(NSIndexPath *)indexPath;
 
 /**
+ *  是否显示时间轴Label的回调方法
+ *
+ *  @param indexPath 目标消息的位置IndexPath
+ *
+ *  @return 根据indexPath获取消息的Model的对象，从而判断返回YES or NO来控制是否显示时间轴Label
+ */
+- (BOOL)shouldDisplayPeerName;
+
+/**
  *  配置Cell的样式或者字体
  *
  *  @param cell      目标Cell
@@ -143,9 +152,9 @@
 
 @interface XHMessageTableViewController : UIViewController <UITableViewDataSource, UITableViewDelegate, XHMessageTableViewControllerDelegate, XHMessageTableViewControllerDataSource, XHMessageInputViewDelegate, XHMessageTableViewCellDelegate, XHShareMenuViewDelegate, XHEmotionManagerViewDelegate, XHEmotionManagerViewDataSource>
 
-@property (nonatomic, weak) id <XHMessageTableViewControllerDelegate> delegate;
+@property (nonatomic, weak) id<XHMessageTableViewControllerDelegate> delegate;
 
-@property (nonatomic, weak) id <XHMessageTableViewControllerDataSource> dataSource;
+@property (nonatomic, weak) id<XHMessageTableViewControllerDataSource> dataSource;
 
 /**
  *  数据源，显示多少消息
@@ -244,20 +253,6 @@
 - (void)finishSendMessageWithBubbleMessageType:(XHBubbleMessageMediaType)mediaType;
 
 /**
- *  设置View、tableView的背景颜色
- *
- *  @param color 背景颜色
- */
-- (void)setBackgroundColor:(UIColor *)color;
-
-/**
- *  设置消息列表的背景图片
- *
- *  @param backgroundImage 目标背景图片
- */
-- (void)setBackgroundImage:(UIImage *)backgroundImage;
-
-/**
  *  是否滚动到底部
  *
  *  @param animated YES Or NO
@@ -274,5 +269,28 @@
 - (void)scrollToRowAtIndexPath:(NSIndexPath *)indexPath
 			  atScrollPosition:(UITableViewScrollPosition)position
 					  animated:(BOOL)animated;
+
+@end
+
+@interface XHMessageTableViewController (LCIMBackgroundImage)
+
+/**
+ *  设置View、tableView的背景颜色
+ *
+ *  @param color 背景颜色
+ */
+- (void)setBackgroundColor:(UIColor *)color;
+
+/*!
+ *  设置消息列表的背景图片
+ *
+ *  @param backgroundImage 目标背景图片
+ */
+@property (nonatomic, strong) UIImage *backgroundImage;
+
+/*!
+ *  在没有数据时显示该view，占据Controller的View整个页面
+ */
+@property (nonatomic, strong) UIView *placeHolder;
 
 @end

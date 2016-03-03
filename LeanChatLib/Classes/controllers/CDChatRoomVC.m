@@ -199,15 +199,19 @@ static NSInteger const kOnePageSize = 10;
             break;
     }
     if (disPlayViewController) {
-        [self.navigationController pushViewController:disPlayViewController animated:YES];
+        [self.navigationController pushViewController:disPlayViewController animated:NO];
     }
 }
 
 - (void)didDoubleSelectedOnTextMessage:(id<XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath {
+    id<UIApplicationDelegate> delegate = ((id<UIApplicationDelegate>)[[UIApplication sharedApplication] delegate]);
+    UIWindow *window = delegate.window;
     DLog(@"text : %@", message.text);
     XHDisplayTextViewController *displayTextViewController = [[XHDisplayTextViewController alloc] init];
     displayTextViewController.message = message;
-    [self.navigationController pushViewController:displayTextViewController animated:YES];
+//    [window addSubview:displayTextViewController.view];
+
+    [self.navigationController pushViewController:displayTextViewController animated:NO];
 }
 
 - (void)didSelectedAvatorOnMessage:(id<XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath {
@@ -330,20 +334,23 @@ static NSInteger const kOnePageSize = 10;
 
 // 是否显示时间轴Label的回调方法
 - (BOOL)shouldDisplayTimestampForRowAtIndexPath:(NSIndexPath *)indexPath {
+
     if (indexPath.row == 0) {
-        return YES;
-    }
-    else {
+        return NO;
+    }  else {
         XHMessage *msg = [self.messages objectAtIndex:indexPath.row];
         XHMessage *lastMsg = [self.messages objectAtIndex:indexPath.row - 1];
         int interval = [msg.timestamp timeIntervalSinceDate:lastMsg.timestamp];
         if (interval > 60 * 3) {
             return YES;
-        }
-        else {
+        } else {
             return NO;
         }
     }
+}
+
+- (BOOL)shouldDisplayPeerName {
+    return YES;
 }
 
 // 配置Cell的样式或者字体

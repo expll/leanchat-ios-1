@@ -11,6 +11,8 @@
 
 static void * const XHMessageInputTextViewContext = (void*)&XHMessageInputTextViewContext;
 
+#define kDefaultCellBackgroundColor [UIColor colorWithRed:230.f / 255.f green:230.f / 255.f blue:230.f / 255.f alpha:1.f]
+
 @interface XHMessageTableViewController ()
 
 /**
@@ -35,8 +37,6 @@ static void * const XHMessageInputTextViewContext = (void*)&XHMessageInputTextVi
 @property (nonatomic, weak, readwrite) XHShareMenuView *shareMenuView;
 @property (nonatomic, weak, readwrite) XHEmotionManagerView *emotionManagerView;
 @property (nonatomic, strong, readwrite) XHVoiceRecordHUD *voiceRecordHUD;
-
-
 @property (nonatomic, strong) UIView *headerContainerView;
 @property (nonatomic, strong) UIActivityIndicatorView *loadMoreActivityIndicatorView;
 
@@ -54,7 +54,7 @@ static void * const XHMessageInputTextViewContext = (void*)&XHMessageInputTextVi
  *  管理录音工具对象
  */
 @property (nonatomic, strong) XHVoiceRecordHelper *voiceRecordHelper;
-@property (nonatomic, assign) BOOL observingContentOffset;
+@property (nonatomic, assign) BOOL observingContentOffsetAndPanGestureControl;
 
 #pragma mark - DataSource Change
 /**
@@ -142,7 +142,7 @@ static void * const XHMessageInputTextViewContext = (void*)&XHMessageInputTextVi
  *
  *  @return 返回计算的高度
  */
-- (CGFloat)calculateCellHeightWithMessage:(id <XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath;
+- (CGFloat)calculateCellHeightWithMessage:(id<XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath;
 
 #pragma mark - Message Send helper Method
 /**
@@ -257,6 +257,7 @@ static void * const XHMessageInputTextViewContext = (void*)&XHMessageInputTextVi
     [self.messageTableView deleteRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationBottom];
 }
 
+//FIXME:refresh update bug, when drag down, but not refreshing
 static CGPoint  delayOffset = {0.0};
 // http://stackoverflow.com/a/11602040 Keep UITableView static when inserting rows at the top
 - (void)insertOldMessages:(NSArray *)oldMessages completion:(void (^)())completion{
@@ -392,13 +393,11 @@ static CGPoint  delayOffset = {0.0};
     switch (mediaType) {
         case XHBubbleMessageMediaTypeText: {
             [self.messageInputView.inputTextView setText:nil];
-            if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0) {
-                self.messageInputView.inputTextView.enablesReturnKeyAutomatically = NO;
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    self.messageInputView.inputTextView.enablesReturnKeyAutomatically = YES;
-                    [self.messageInputView.inputTextView reloadInputViews];
-                });
-            }
+            self.messageInputView.inputTextView.enablesReturnKeyAutomatically = NO;
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                self.messageInputView.inputTextView.enablesReturnKeyAutomatically = YES;
+                [self.messageInputView.inputTextView reloadInputViews];
+            });
             break;
         }
         case XHBubbleMessageMediaTypePhoto: {
@@ -496,12 +495,9 @@ static CGPoint  delayOffset = {0.0};
 }
 
 - (void)initilzer {
-    if ([self respondsToSelector:@selector(automaticallyAdjustsScrollViewInsets)]) {
-        self.automaticallyAdjustsScrollViewInsets = NO;
-    }
+    self.automaticallyAdjustsScrollViewInsets = NO;
     // 默认设置用户滚动为NO
     _isUserScrolling = NO;
-    
     // 初始化message tableView
     XHMessageTableView *messageTableView = [[XHMessageTableView alloc] initWithFrame:self.view.bounds style:UITableViewStylePlain];
     messageTableView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -526,7 +522,7 @@ static CGPoint  delayOffset = {0.0};
     [self setTableViewInsetsWithBottomValue:inputViewHeight];
     
     // 设置整体背景颜色
-    [self setBackgroundColor:[UIColor whiteColor]];
+    [self setBackgroundColor:kDefaultCellBackgroundColor];
     
     // 输入工具条的frame
     CGRect inputFrame = CGRectMake(0.0f,
@@ -618,23 +614,21 @@ static CGPoint  delayOffset = {0.0};
     
     _messageInputView = inputView;
     
-    
     // 设置手势滑动，默认添加一个bar的高度值
     self.messageTableView.messageInputBarHeight = CGRectGetHeight(_messageInputView.bounds);
 }
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    // 设置键盘通知或者手势控制键盘消失
-    [self.messageTableView setupPanGestureControlKeyboardHide:self.allowsPanToDismissKeyboard];
-    
     // KVO 检查contentSize
-    if (!self.observingContentOffset) {
+    if (!self.observingContentOffsetAndPanGestureControl) {
         [self.messageInputView.inputTextView addObserver:self
                                               forKeyPath:@"contentSize"
                                                  options:NSKeyValueObservingOptionNew
                                                  context:XHMessageInputTextViewContext];
-        self.observingContentOffset = YES;
+        // 设置键盘通知或者手势控制键盘消失
+        [self.messageTableView setupPanGestureControlKeyboardHide:self.allowsPanToDismissKeyboard];
+        self.observingContentOffsetAndPanGestureControl = YES;
     }
 }
 
@@ -644,14 +638,14 @@ static CGPoint  delayOffset = {0.0};
     [self.messageInputView.inputTextView resignFirstResponder];
     [self setEditing:NO animated:YES];
     
-    // remove键盘通知或者手势
-    [self.messageTableView disSetupPanGestureControlKeyboardHide:self.allowsPanToDismissKeyboard];
     // For  solve this crash problem: http://i64.tinypic.com/2hfna4l.jpg
     // http://stackoverflow.com/a/23207026/3395008
-    if (self.observingContentOffset) {
+    if (self.observingContentOffsetAndPanGestureControl) {
         // remove KVO
+        // remove键盘通知或者手势
+        [self.messageTableView disSetupPanGestureControlKeyboardHide:self.allowsPanToDismissKeyboard];
         [self.messageInputView.inputTextView removeObserver:self forKeyPath:@"contentSize"];
-        self.observingContentOffset = NO;
+        self.observingContentOffsetAndPanGestureControl = NO;
     }
 }
 
@@ -663,22 +657,8 @@ static CGPoint  delayOffset = {0.0};
     [[XHMessageBubbleView appearance] setFont:[UIFont systemFontOfSize:16.0f]];
 }
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
-}
-
-- (void)dealloc {
-    _messages = nil;
-    _delegate = nil;
-    _dataSource = nil;
-    _messageTableView.delegate = nil;
-    _messageTableView.dataSource = nil;
-    _messageTableView = nil;
-    _messageInputView = nil;
-    
-    _photographyHelper = nil;
-    _locationHelper = nil;
+- (BOOL)prefersStatusBarHidden {
+    return NO;
 }
 
 #pragma mark - View Rotation
@@ -687,7 +667,7 @@ static CGPoint  delayOffset = {0.0};
     return NO;
 }
 
-- (NSUInteger)supportedInterfaceOrientations {
+- (UIInterfaceOrientationMask)supportedInterfaceOrientations {
     return UIInterfaceOrientationMaskPortrait;
 }
 
@@ -712,11 +692,7 @@ static CGPoint  delayOffset = {0.0};
 #pragma mark - UITextView Helper Method
 
 - (CGFloat)getTextViewContentH:(UITextView *)textView {
-    if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0) {
-        return ceilf([textView sizeThatFits:textView.frame.size].height);
-    } else {
-        return textView.contentSize.height;
-    }
+    return ceilf([textView sizeThatFits:textView.frame.size].height);
 }
 
 #pragma mark - Layout Message Input View Helper Method
@@ -744,9 +720,6 @@ static CGPoint  delayOffset = {0.0};
                              [self scrollToBottomAnimated:NO];
                              
                              if (isShrinking) {
-                                 if ([[[UIDevice currentDevice] systemVersion] floatValue] < 7.0) {
-                                     self.previousTextViewContentHeight = MIN(contentH, maxHeight);
-                                 }
                                  // if shrinking the view, animate text view frame BEFORE input view frame
                                  [self.messageInputView adjustTextViewHeightBy:changeInHeight];
                              }
@@ -757,9 +730,6 @@ static CGPoint  delayOffset = {0.0};
                                                                       inputViewFrame.size.width,
                                                                       inputViewFrame.size.height + changeInHeight);
                              if (!isShrinking) {
-                                 if ([[[UIDevice currentDevice] systemVersion] floatValue] < 7.0) {
-                                     self.previousTextViewContentHeight = MIN(contentH, maxHeight);
-                                 }
                                  // growing the view, animate the text view frame AFTER input view frame
                                  [self.messageInputView adjustTextViewHeightBy:changeInHeight];
                              }
@@ -794,27 +764,27 @@ static CGPoint  delayOffset = {0.0};
 
 - (UIEdgeInsets)tableViewInsetsWithBottomValue:(CGFloat)bottom {
     UIEdgeInsets insets = UIEdgeInsetsZero;
-    
-    if ([self respondsToSelector:@selector(topLayoutGuide)]) {
-        insets.top = 64;
-    }
-    
+    insets.top = 20;
     insets.bottom = bottom;
-    
     return insets;
 }
 
 #pragma mark - Message Calculate Cell Height
 
-- (CGFloat)calculateCellHeightWithMessage:(id <XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath {
+- (CGFloat)calculateCellHeightWithMessage:(id<XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath {
     CGFloat cellHeight = 0;
     
     BOOL displayTimestamp = YES;
+    BOOL displayPeerName = NO;
+    
+    //FIXME:indexPath changed, timestamp change the way wether display or not, but showed the old way.
     if ([self.delegate respondsToSelector:@selector(shouldDisplayTimestampForRowAtIndexPath:)]) {
         displayTimestamp = [self.delegate shouldDisplayTimestampForRowAtIndexPath:indexPath];
     }
-    
-    cellHeight = [XHMessageTableViewCell calculateCellHeightWithMessage:message displaysTimestamp:displayTimestamp];
+    if ([self.delegate respondsToSelector:@selector(shouldDisplayPeerName)]) {
+        displayPeerName = [self.delegate shouldDisplayPeerName];
+    }
+    cellHeight = [XHMessageTableViewCell calculateCellHeightWithMessage:message displaysTimestamp:displayTimestamp displaysPeerName:displayPeerName];
     
     return cellHeight;
 }
@@ -1180,7 +1150,7 @@ static CGPoint  delayOffset = {0.0};
 
 #pragma mark - XHMessageTableViewController DataSource
 
-- (id <XHMessageModel>)messageForRowAtIndexPath:(NSIndexPath *)indexPath {
+- (id<XHMessageModel>)messageForRowAtIndexPath:(NSIndexPath *)indexPath {
     return self.messages[indexPath.row];
 }
 
@@ -1196,37 +1166,52 @@ static CGPoint  delayOffset = {0.0};
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     
-    id <XHMessageModel> message = [self.dataSource messageForRowAtIndexPath:indexPath];
-    
+    id<XHMessageModel> message = [self.dataSource messageForRowAtIndexPath:indexPath];
+
     BOOL displayTimestamp = YES;
+    BOOL displayPeerName = NO;
     if ([self.delegate respondsToSelector:@selector(shouldDisplayTimestampForRowAtIndexPath:)]) {
         displayTimestamp = [self.delegate shouldDisplayTimestampForRowAtIndexPath:indexPath];
     }
-    
-    static NSString *cellIdentifier = @"XHMessageTableViewCell";
-    
-    XHMessageTableViewCell *messageTableViewCell = [tableView dequeueReusableCellWithIdentifier:cellIdentifier];
-    
-    if (!messageTableViewCell) {
-        messageTableViewCell = [[XHMessageTableViewCell alloc] initWithMessage:message displaysTimestamp:displayTimestamp reuseIdentifier:cellIdentifier];
-        messageTableViewCell.delegate = self;
+    if ([self.delegate respondsToSelector:@selector(shouldDisplayPeerName)]) {
+        displayPeerName = [self.delegate shouldDisplayPeerName];
+    }
+
+    XHMessageTableViewCell *messageTableViewCell;
+    switch (message.bubbleMessageType) {
+        case XHBubbleMessageTypeReceiving:
+            messageTableViewCell = [tableView dequeueReusableCellWithIdentifier:receiverCellIdentifier];
+            if (!messageTableViewCell) {
+                messageTableViewCell = [[XHMessageTableViewCell alloc] initWithMessage:message
+                                                                       reuseIdentifier:receiverCellIdentifier];
+                messageTableViewCell.delegate = self;
+            }
+            break;
+        case XHBubbleMessageTypeSending:
+            messageTableViewCell = [tableView dequeueReusableCellWithIdentifier:senderCellIdentifier];
+            displayPeerName = NO;
+            if (!messageTableViewCell) {
+                messageTableViewCell = [[XHMessageTableViewCell alloc] initWithMessage:message
+                                                                       reuseIdentifier:senderCellIdentifier];
+                messageTableViewCell.delegate = self;
+            }
+            break;
     }
     
     messageTableViewCell.indexPath = indexPath;
-    [messageTableViewCell configureCellWithMessage:message displaysTimestamp:displayTimestamp];
+    [messageTableViewCell configureCellWithMessage:message displaysTimestamp:displayTimestamp displaysPeerName:displayPeerName];
     [messageTableViewCell setBackgroundColor:tableView.backgroundColor];
     
     if ([self.delegate respondsToSelector:@selector(configureCell:atIndexPath:)]) {
         [self.delegate configureCell:messageTableViewCell atIndexPath:indexPath];
     }
-    
     return messageTableViewCell;
 }
 
 #pragma mark - Table View Delegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    id <XHMessageModel> message = [self.dataSource messageForRowAtIndexPath:indexPath];
+    id<XHMessageModel> message = [self.dataSource messageForRowAtIndexPath:indexPath];
     return [self calculateCellHeightWithMessage:message atIndexPath:indexPath];
 }
 

@@ -8,7 +8,7 @@ target 'LeanChatLib' do
     pod 'DateTools' , '1.5.0'
     pod 'FMDB', '2.5'
     pod 'SDWebImage'
-
+    pod 'CYLDeallocBlockExecutor'
 end
 
 ENV["COCOAPODS_DISABLE_STATS"] = "true"
