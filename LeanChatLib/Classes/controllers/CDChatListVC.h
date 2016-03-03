@@ -41,7 +41,7 @@
 
 - (void)prepareConversationsWhenLoad:(NSArray *)conversations completion:(AVIMBooleanResultBlock)completion;
 
-- (UIImage *)defaultAvatarImageView;
+- (UIImage *)defaultAvatarImage;
 
 @end
 

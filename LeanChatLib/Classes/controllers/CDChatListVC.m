@@ -184,10 +184,10 @@ static NSString *cellIdentifier = @"ContactCell";
     LZConversationCell *cell = [LZConversationCell dequeueOrCreateCellByTableView:tableView];
     AVIMConversation *conversation = [self.conversations objectAtIndex:indexPath.row];
     if (conversation.type == CDConversationTypeSingle) {
-        id <CDUserModelDelegate> user = [[CDChatManager manager].userDelegate getUserById:conversation.otherId];
+        id<CDUserModelDelegate> user = [[CDChatManager manager].userDelegate getUserById:conversation.otherId];
         cell.nameLabel.text = user.username;
-        if ([self.chatListDelegate respondsToSelector:@selector(defaultAvatarImageView)] && user.avatarUrl) {
-            [cell.avatarImageView sd_setImageWithURL:[NSURL URLWithString:user.avatarUrl] placeholderImage:[self.chatListDelegate defaultAvatarImageView]];
+        if ([self.chatListDelegate respondsToSelector:@selector(defaultAvatarImage)] && user.avatarUrl) {
+            [cell.avatarImageView sd_setImageWithURL:[NSURL URLWithString:user.avatarUrl] placeholderImage:[self.chatListDelegate defaultAvatarImage]];
         } else {
             [cell.avatarImageView sd_setImageWithURL:[NSURL URLWithString:user.avatarUrl] placeholderImage:[UIImage imageNamed:@"avator"]];
         }
