@@ -12,6 +12,6 @@
 
 @interface XHDisplayMediaViewController : XHBaseViewController
 
-@property (nonatomic, strong) id <XHMessageModel> message;
+@property (nonatomic, strong) id<XHMessageModel> message;
 
 @end

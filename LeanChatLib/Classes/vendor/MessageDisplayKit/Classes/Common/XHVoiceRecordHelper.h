@@ -17,7 +17,6 @@ typedef void(^XHCancellRecorderDeleteFileCompletion)();
 typedef void(^XHRecordProgress)(float progress);
 typedef void(^XHPeakPowerForChannel)(float peakPowerForChannel);
 
-
 @interface XHVoiceRecordHelper : NSObject
 
 @property (nonatomic, copy) XHStopRecorderCompletion maxTimeStopRecorderCompletion;

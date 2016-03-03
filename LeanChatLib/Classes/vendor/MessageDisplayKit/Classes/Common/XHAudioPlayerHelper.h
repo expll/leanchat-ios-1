@@ -26,7 +26,7 @@
 
 @property (nonatomic, copy) NSString *playingFileName;
 
-@property (nonatomic, assign) id <XHAudioPlayerHelperDelegate> delegate;
+@property (nonatomic, assign) id<XHAudioPlayerHelperDelegate> delegate;
 
 @property (nonatomic, strong) NSIndexPath *playingIndexPathInFeedList;//给动态列表用
 
