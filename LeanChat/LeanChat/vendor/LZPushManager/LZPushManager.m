@@ -6,7 +6,7 @@
 //
 
 #import "LZPushManager.h"
-
+#import <AVOSCloudIM/AVOSCloudIM.h>
 @implementation LZPushManager
 
 + (LZPushManager *)manager {
@@ -19,7 +19,7 @@
 }
 
 - (void)registerForRemoteNotification {
-    [AVOSCloud registerForRemoteNotification];
+    [AVOSCloudIM registerForRemoteNotification];
 }
 
 - (void)saveInstallationWithDeviceToken:(NSData *)deviceToken userId:(NSString *)userId {
