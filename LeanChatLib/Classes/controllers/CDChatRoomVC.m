@@ -28,7 +28,6 @@ static NSInteger const kOnePageSize = 10;
 @interface CDChatRoomVC ()
 
 @property (nonatomic, strong, readwrite) AVIMConversation *conversation;
-@property (atomic, assign) BOOL isLoadingMsg;
 //TODO:msgs and messages are repeated
 @property (nonatomic, strong, readwrite) NSMutableArray *msgs;
 @property (nonatomic, strong) XHMessageTableViewCell *currentSelectedCell;
@@ -48,7 +47,7 @@ static NSInteger const kOnePageSize = 10;
         //self.allowsSendVoice = NO;
         //self.allowsSendFace = NO;
         //self.allowsSendMultiMedia = NO;
-        _isLoadingMsg = NO;
+        self.loadingMoreMessage = NO;
         _msgs = [NSMutableArray array];
     }
     return self;
@@ -74,9 +73,9 @@ static NSInteger const kOnePageSize = 10;
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(receiveMessage:) name:kCDNotificationMessageReceived object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onMessageDelivered:) name:kCDNotificationMessageDelivered object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshConv) name:kCDNotificationConversationUpdated object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshConversation) name:kCDNotificationConversationUpdated object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateStatusView) name:kCDNotificationConnectivityUpdated object:nil];
-    [self refreshConv];
+    [self refreshConversation];
     [self loadMessagesWhenInit];
     [self updateStatusView];
 }
@@ -108,7 +107,6 @@ static NSInteger const kOnePageSize = 10;
 - (void)initBarButton {
     UIBarButtonItem *backBtn = [[UIBarButtonItem alloc] initWithTitle:@"返回" style:UIBarButtonItemStylePlain target:nil action:nil];
     [self.navigationItem setBackBarButtonItem:backBtn];
-    //    self.navigationItem.backBarButtonItem.title
 }
 
 - (void)initBottomMenuAndEmotionView {
@@ -127,7 +125,7 @@ static NSInteger const kOnePageSize = 10;
     [self.emotionManagerView reloadData];
 }
 
-- (void)refreshConv {
+- (void)refreshConversation {
     self.title = self.conversation.title;
 }
 
@@ -204,13 +202,9 @@ static NSInteger const kOnePageSize = 10;
 }
 
 - (void)didDoubleSelectedOnTextMessage:(id<XHMessageModel>)message atIndexPath:(NSIndexPath *)indexPath {
-    id<UIApplicationDelegate> delegate = ((id<UIApplicationDelegate>)[[UIApplication sharedApplication] delegate]);
-    UIWindow *window = delegate.window;
     DLog(@"text : %@", message.text);
     XHDisplayTextViewController *displayTextViewController = [[XHDisplayTextViewController alloc] init];
     displayTextViewController.message = message;
-//    [window addSubview:displayTextViewController.view];
-
     [self.navigationController pushViewController:displayTextViewController animated:NO];
 }
 
@@ -250,10 +244,6 @@ static NSInteger const kOnePageSize = 10;
 }
 
 #pragma mark - XHMessageTableViewController Delegate
-
-- (BOOL)shouldLoadMoreMessagesScrollToTop {
-    return YES;
-}
 
 - (void)loadMoreMessagesScrollTotop {
     [self loadOldMessages];
@@ -298,7 +288,6 @@ static NSInteger const kOnePageSize = 10;
     }
     AVIMTypedMessage *msg = [AVIMAudioMessage messageWithText:nil attachedFilePath:voicePath attributes:nil];
     [self sendMsg:msg];
-    
 }
 
 // 发送表情消息的回调方法
@@ -330,12 +319,12 @@ static NSInteger const kOnePageSize = 10;
     [self finishSendMessageWithBubbleMessageType:XHBubbleMessageMediaTypeLocalPosition];
 }
 
-#pragma mark -  ui config
+#pragma mark -  UI config Delegate Method
 
 // 是否显示时间轴Label的回调方法
 - (BOOL)shouldDisplayTimestampForRowAtIndexPath:(NSIndexPath *)indexPath {
-
     if (indexPath.row == 0) {
+        //FIXME:这里只能设NO, 不然会引起显示异常
         return NO;
     }  else {
         XHMessage *msg = [self.messages objectAtIndex:indexPath.row];
@@ -637,10 +626,10 @@ static NSInteger const kOnePageSize = 10;
 }
 
 - (void)loadMessagesWhenInit {
-    if (self.isLoadingMsg) {
+    if (self.loadingMoreMessage) {
         return;
     } else {
-        self.isLoadingMsg = YES;
+        self.loadingMoreMessage = YES;
         [self queryAndCacheMessagesWithTimestamp:0 block:^(NSArray *msgs, NSError *error) {
             if ([self filterError:error]) {
                 // 失败消息加到末尾，因为 SDK 缓存不保存它们
@@ -665,16 +654,16 @@ static NSInteger const kOnePageSize = 10;
                     }
                 }
             }
-            self.isLoadingMsg = NO;
+            self.loadingMoreMessage = NO;
         }];
     }
 }
 
 - (void)loadOldMessages{
-    if (self.messages.count == 0 || self.isLoadingMsg) {
+    if (self.messages.count == 0 || self.loadingMoreMessage) {
         return;
     } else {
-        self.isLoadingMsg = YES;
+        self.loadingMoreMessage = YES;
         AVIMTypedMessage *msg = [self.msgs objectAtIndex:0];
         int64_t timestamp = msg.sendTimestamp;
         [self queryAndCacheMessagesWithTimestamp:timestamp block:^(NSArray *msgs, NSError *error) {
@@ -684,10 +673,10 @@ static NSInteger const kOnePageSize = 10;
                 [newMsgs addObjectsFromArray:self.msgs];
                 self.msgs = newMsgs;
                 [self insertOldMessages:xhMsgs completion: ^{
-                    self.isLoadingMsg = NO;
+                    self.loadingMoreMessage = NO;
                 }];
             } else {
-                self.isLoadingMsg = NO;
+                self.loadingMoreMessage = NO;
             }
         }];
     }
@@ -736,11 +725,11 @@ static NSInteger const kOnePageSize = 10;
 }
 
 - (void)insertMessage:(AVIMTypedMessage *)message {
-    if (self.isLoadingMsg) {
+    if (self.loadingMoreMessage) {
         [self performSelector:@selector(insertMessage:) withObject:message afterDelay:1];
         return;
     }
-    self.isLoadingMsg = YES;
+    self.loadingMoreMessage = YES;
     [self memoryCacheMsgs:@[message] callback:^(BOOL succeeded, NSError *error) {
         if ([self filterError:error]) {
             XHMessage *xhMessage = [self getXHMessageByMsg:message];
@@ -750,7 +739,7 @@ static NSInteger const kOnePageSize = 10;
             [self.messageTableView insertRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
             [self scrollToBottomAnimated:YES];
         }
-        self.isLoadingMsg = NO;
+        self.loadingMoreMessage = NO;
     }];
 }
 

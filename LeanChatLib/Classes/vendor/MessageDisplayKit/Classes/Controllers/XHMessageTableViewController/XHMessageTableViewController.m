@@ -5,11 +5,16 @@
 //  Created by qtone-1 on 14-4-24.
 //  Copyright (c) 2014年 曾宪华 开发团队(http://iyilunba.com ) 本人QQ:543413507 本人QQ群（142557668）. All rights reserved.
 //
+//LCIMDebugging定义为1表示【debugging】 ，注释、不定义或者0 表示【debugging】
+/* Set LCIMDebugging =1 in preprocessor macros under build settings to enable 【debugging】.*/
+//只能使用宏定义定义LCIMDebugging，不能定义为常量，因为使用了预编译判断.
+//#define LCIMDebugging 1
 
 #import "XHMessageTableViewController.h"
 #import <MobileCoreServices/MobileCoreServices.h>
 
 static void * const XHMessageInputTextViewContext = (void*)&XHMessageInputTextViewContext;
+static CGFloat const LCIMScrollViewInsetTop = 20.f;
 
 #define kDefaultCellBackgroundColor [UIColor colorWithRed:230.f / 255.f green:230.f / 255.f blue:230.f / 255.f alpha:1.f]
 
@@ -29,9 +34,7 @@ static void * const XHMessageInputTextViewContext = (void*)&XHMessageInputTextVi
  *  记录键盘的高度，为了适配iPad和iPhone
  */
 @property (nonatomic, assign) CGFloat keyboardViewHeight;
-
 @property (nonatomic, assign) XHInputViewType textViewInputViewType;
-
 @property (nonatomic, weak, readwrite) XHMessageTableView *messageTableView;
 @property (nonatomic, weak, readwrite) XHMessageInputView *messageInputView;
 @property (nonatomic, weak, readwrite) XHShareMenuView *shareMenuView;
@@ -39,6 +42,7 @@ static void * const XHMessageInputTextViewContext = (void*)&XHMessageInputTextVi
 @property (nonatomic, strong, readwrite) XHVoiceRecordHUD *voiceRecordHUD;
 @property (nonatomic, strong) UIView *headerContainerView;
 @property (nonatomic, strong) UIActivityIndicatorView *loadMoreActivityIndicatorView;
+@property (nonatomic, assign) BOOL shouldLoadMoreMessagesScrollToTop;
 
 /**
  *  管理本机的摄像和图片库的工具对象
@@ -258,9 +262,11 @@ static void * const XHMessageInputTextViewContext = (void*)&XHMessageInputTextVi
 }
 
 //FIXME:refresh update bug, when drag down, but not refreshing
+//TODO:add Refresh Lib
 static CGPoint  delayOffset = {0.0};
 // http://stackoverflow.com/a/11602040 Keep UITableView static when inserting rows at the top
 - (void)insertOldMessages:(NSArray *)oldMessages completion:(void (^)())completion{
+    [self setLoadingMoreMessage:YES];
     WEAKSELF
     [self exChangeMessageDataSourceQueue:^{
         NSMutableArray *messages = [NSMutableArray arrayWithArray:oldMessages];
@@ -285,6 +291,7 @@ static CGPoint  delayOffset = {0.0};
             [weakSelf.messageTableView endUpdates];
             [UIView setAnimationsEnabled:YES];
             completion();
+            [self setLoadingMoreMessage:NO];
         }];
     }];
 }
@@ -302,23 +309,39 @@ static CGPoint  delayOffset = {0.0};
     if (!_headerContainerView) {
         _headerContainerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), 44)];
         _headerContainerView.backgroundColor = self.messageTableView.backgroundColor;
+#ifdef LCIMDebugging
+        _headerContainerView.backgroundColor = [UIColor redColor];
+#endif
         [_headerContainerView addSubview:self.loadMoreActivityIndicatorView];
     }
     return _headerContainerView;
 }
+
 - (UIActivityIndicatorView *)loadMoreActivityIndicatorView {
     if (!_loadMoreActivityIndicatorView) {
         _loadMoreActivityIndicatorView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
         _loadMoreActivityIndicatorView.center = CGPointMake(CGRectGetWidth(_headerContainerView.bounds) / 2.0, CGRectGetHeight(_headerContainerView.bounds) / 2.0);
+#ifdef LCIMDebugging
+        _loadMoreActivityIndicatorView.backgroundColor = [UIColor blueColor];
+#endif
     }
     return _loadMoreActivityIndicatorView;
 }
+
 - (void)setLoadingMoreMessage:(BOOL)loadingMoreMessage {
     _loadingMoreMessage = loadingMoreMessage;
     if (loadingMoreMessage) {
-        [self.loadMoreActivityIndicatorView startAnimating];
+        dispatch_async(dispatch_get_main_queue(),^{
+            if (!self.loadMoreActivityIndicatorView.isAnimating) {
+                [self.loadMoreActivityIndicatorView startAnimating];
+            }
+        });
     } else {
-        [self.loadMoreActivityIndicatorView stopAnimating];
+        dispatch_async(dispatch_get_main_queue(),^{
+            if (self.loadMoreActivityIndicatorView.isAnimating) {
+                [self.loadMoreActivityIndicatorView stopAnimating];
+            }
+        });
     }
 }
 
@@ -477,7 +500,8 @@ static CGPoint  delayOffset = {0.0};
     _allowsSendMultiMedia = YES;
     _allowsSendFace = YES;
     _inputViewStyle = XHMessageInputViewStyleFlat;
-    
+    _shouldLoadMoreMessagesScrollToTop = YES;
+
     self.delegate = self;
     self.dataSource = self;
 }
@@ -506,11 +530,10 @@ static CGPoint  delayOffset = {0.0};
     messageTableView.separatorColor = [UIColor clearColor];
     messageTableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     
-    BOOL shouldLoadMoreMessagesScrollToTop = YES;
     if ([self.delegate respondsToSelector:@selector(shouldLoadMoreMessagesScrollToTop)]) {
-        shouldLoadMoreMessagesScrollToTop = [self.delegate shouldLoadMoreMessagesScrollToTop];
+        self.shouldLoadMoreMessagesScrollToTop = [self.delegate shouldLoadMoreMessagesScrollToTop];
     }
-    if (shouldLoadMoreMessagesScrollToTop) {
+    if (self.shouldLoadMoreMessagesScrollToTop) {
         messageTableView.tableHeaderView = self.headerContainerView;
     }
     [self.view addSubview:messageTableView];
@@ -764,7 +787,7 @@ static CGPoint  delayOffset = {0.0};
 
 - (UIEdgeInsets)tableViewInsetsWithBottomValue:(CGFloat)bottom {
     UIEdgeInsets insets = UIEdgeInsetsZero;
-    insets.top = 20;
+    insets.top = LCIMScrollViewInsetTop;
     insets.bottom = bottom;
     return insets;
 }
@@ -1111,10 +1134,8 @@ static CGPoint  delayOffset = {0.0};
 #pragma mark - UIScrollView Delegate
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
-    if ([self.delegate respondsToSelector:@selector(shouldLoadMoreMessagesScrollToTop)]) {
-        BOOL shouldLoadMoreMessages = [self.delegate shouldLoadMoreMessagesScrollToTop];
-        if (shouldLoadMoreMessages) {
-            if (scrollView.contentOffset.y >=0 && scrollView.contentOffset.y <= 44) {
+        if (self.shouldLoadMoreMessagesScrollToTop) {
+            if (scrollView.contentOffset.y <= -LCIMScrollViewInsetTop -20 && scrollView.contentOffset.y >= -LCIMScrollViewInsetTop-44) {
                 if (!self.loadingMoreMessage) {
                     if ([self.delegate respondsToSelector:@selector(loadMoreMessagesScrollTotop)]) {
                         [self.delegate loadMoreMessagesScrollTotop];
@@ -1122,7 +1143,6 @@ static CGPoint  delayOffset = {0.0};
                 }
             }
         }
-    }
 }
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
@@ -1165,9 +1185,7 @@ static CGPoint  delayOffset = {0.0};
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    
     id<XHMessageModel> message = [self.dataSource messageForRowAtIndexPath:indexPath];
-
     BOOL displayTimestamp = YES;
     BOOL displayPeerName = NO;
     if ([self.delegate respondsToSelector:@selector(shouldDisplayTimestampForRowAtIndexPath:)]) {

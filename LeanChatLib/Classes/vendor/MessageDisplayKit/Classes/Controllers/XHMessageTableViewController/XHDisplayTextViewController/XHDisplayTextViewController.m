@@ -74,11 +74,6 @@ static void * const LCIMDisplayTextViewContentSizeContext = (void*)&LCIMDisplayT
 
 #pragma mark - Life cycle
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    self.title = NSLocalizedStringFromTable(@"TextDetail", @"MessageDisplayKitString", @"文本消息");
-}
-
 - (void)viewWillDisappear:(BOOL)animated {
     [self.navigationController setNavigationBarHidden:NO animated:animated];
     [super viewWillDisappear:animated];
