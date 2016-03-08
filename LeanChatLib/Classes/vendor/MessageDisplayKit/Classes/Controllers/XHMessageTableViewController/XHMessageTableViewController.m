@@ -42,7 +42,6 @@ static CGFloat const LCIMScrollViewInsetTop = 20.f;
 @property (nonatomic, strong, readwrite) XHVoiceRecordHUD *voiceRecordHUD;
 @property (nonatomic, strong) UIView *headerContainerView;
 @property (nonatomic, strong) UIActivityIndicatorView *loadMoreActivityIndicatorView;
-@property (nonatomic, assign) BOOL shouldLoadMoreMessagesScrollToTop;
 
 /**
  *  管理本机的摄像和图片库的工具对象
@@ -266,7 +265,6 @@ static CGFloat const LCIMScrollViewInsetTop = 20.f;
 static CGPoint  delayOffset = {0.0};
 // http://stackoverflow.com/a/11602040 Keep UITableView static when inserting rows at the top
 - (void)insertOldMessages:(NSArray *)oldMessages completion:(void (^)())completion{
-    [self setLoadingMoreMessage:YES];
     WEAKSELF
     [self exChangeMessageDataSourceQueue:^{
         NSMutableArray *messages = [NSMutableArray arrayWithArray:oldMessages];
@@ -291,7 +289,6 @@ static CGPoint  delayOffset = {0.0};
             [weakSelf.messageTableView endUpdates];
             [UIView setAnimationsEnabled:YES];
             completion();
-            [self setLoadingMoreMessage:NO];
         }];
     }];
 }
@@ -529,13 +526,7 @@ static CGPoint  delayOffset = {0.0};
     messageTableView.delegate = self;
     messageTableView.separatorColor = [UIColor clearColor];
     messageTableView.separatorStyle = UITableViewCellSeparatorStyleNone;
-    
-    if ([self.delegate respondsToSelector:@selector(shouldLoadMoreMessagesScrollToTop)]) {
-        self.shouldLoadMoreMessagesScrollToTop = [self.delegate shouldLoadMoreMessagesScrollToTop];
-    }
-    if (self.shouldLoadMoreMessagesScrollToTop) {
-        messageTableView.tableHeaderView = self.headerContainerView;
-    }
+    messageTableView.tableHeaderView = self.headerContainerView;
     [self.view addSubview:messageTableView];
     [self.view sendSubviewToBack:messageTableView];
     _messageTableView = messageTableView;
@@ -660,7 +651,6 @@ static CGPoint  delayOffset = {0.0};
     // 取消输入框
     [self.messageInputView.inputTextView resignFirstResponder];
     [self setEditing:NO animated:YES];
-    
     // For  solve this crash problem: http://i64.tinypic.com/2hfna4l.jpg
     // http://stackoverflow.com/a/23207026/3395008
     if (self.observingContentOffsetAndPanGestureControl) {

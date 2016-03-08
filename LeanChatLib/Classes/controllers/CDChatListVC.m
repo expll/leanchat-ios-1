@@ -189,7 +189,7 @@ static NSString *cellIdentifier = @"ContactCell";
         if ([self.chatListDelegate respondsToSelector:@selector(defaultAvatarImage)] && user.avatarUrl) {
             [cell.avatarImageView sd_setImageWithURL:[NSURL URLWithString:user.avatarUrl] placeholderImage:[self.chatListDelegate defaultAvatarImage]];
         } else {
-            [cell.avatarImageView sd_setImageWithURL:[NSURL URLWithString:user.avatarUrl] placeholderImage:[UIImage imageNamed:@"avator"]];
+            [cell.avatarImageView sd_setImageWithURL:[NSURL URLWithString:user.avatarUrl] placeholderImage:[UIImage imageNamed:@"lcim_conversation_placeholder_avator"]];
         }
     } else {
         [cell.avatarImageView setImage:conversation.icon];

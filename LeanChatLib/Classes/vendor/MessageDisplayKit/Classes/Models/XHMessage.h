@@ -15,6 +15,7 @@
 @property (nonatomic, copy) NSString *text;
 
 @property (nonatomic, strong) UIImage *photo;
+@property (nonatomic, copy) NSString *photoPath;
 @property (nonatomic, copy) NSString *thumbnailUrl;
 @property (nonatomic, copy) NSString *originPhotoUrl;
 
@@ -26,6 +27,7 @@
 @property (nonatomic, copy) NSString *voiceUrl;
 @property (nonatomic, copy) NSString *voiceDuration;
 
+@property (nonatomic, copy) NSString *emotionName;
 @property (nonatomic, copy) NSString *emotionPath;
 
 @property (nonatomic, strong) UIImage *localPositionPhoto;
@@ -45,18 +47,26 @@
 
 @property (nonatomic, assign) XHBubbleMessageType bubbleMessageType;
 
-@property (nonatomic) BOOL isRead;
+@property (nonatomic, assign) BOOL isRead;
 
 @property (nonatomic,assign) XHMessageStatus status;
+
+/*!
+ * just for failed message store, not meaning messageId
+ */
+@property (nonatomic, copy) NSString *messageId;
+@property (nonatomic, copy) NSString *conversationId;
 
 - (instancetype)initWithText:(NSString *)text
                       sender:(NSString *)sender
                    timestamp:(NSDate *)timestamp;
 
+
 /**
  *  初始化图片类型的消息
  *
  *  @param photo          目标图片
+ *  @param photePath      目标图片的本地路径
  *  @param thumbnailUrl   目标图片在服务器的缩略图地址
  *  @param originPhotoUrl 目标图片在服务器的原图地址
  *  @param sender         发送者
@@ -65,6 +75,7 @@
  *  @return 返回Message model 对象
  */
 - (instancetype)initWithPhoto:(UIImage *)photo
+                    photoPath:(NSString *)photoPath
                  thumbnailUrl:(NSString *)thumbnailUrl
                originPhotoUrl:(NSString *)originPhotoUrl
                        sender:(NSString *)sender
@@ -124,6 +135,11 @@
                            isRead:(BOOL)isRead;
 
 - (instancetype)initWithEmotionPath:(NSString *)emotionPath
+                             sender:(NSString *)sender
+                          timestamp:(NSDate *)timestamp;
+
+- (instancetype)initWithEmotionPath:(NSString *)emotionPath
+                        emotionName:(NSString *)emotionName
                              sender:(NSString *)sender
                           timestamp:(NSDate *)timestamp;
 

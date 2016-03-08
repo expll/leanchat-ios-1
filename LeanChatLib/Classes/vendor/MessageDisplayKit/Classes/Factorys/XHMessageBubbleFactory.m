@@ -27,7 +27,7 @@
     
     switch (type) {
         case XHBubbleMessageTypeSending:
-            // 发送
+            // 发送 ==> @"weChatBubble_Sending_LeanChat"
             messageTypeString = [messageTypeString stringByAppendingString:@"_Sending"];
             break;
         case XHBubbleMessageTypeReceiving:

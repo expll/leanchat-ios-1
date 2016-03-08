@@ -46,7 +46,7 @@
 }
 
 - (UIImage *)defaultAvatarImage {
-    UIImage *defaultAvatarImageView = [UIImage imageNamed:@"avator"];
+    UIImage *defaultAvatarImageView = [UIImage imageNamed:@"lcim_conversation_placeholder_avator"];
     defaultAvatarImageView = [CDUtils roundImage:defaultAvatarImageView toSize:CGSizeMake(100, 100) radius:5];
     return defaultAvatarImageView;
 }

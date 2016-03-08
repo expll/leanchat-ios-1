@@ -12,7 +12,7 @@
 
 - (NSArray *)contactMyAlbums {
     if (!_contactMyAlbums) {
-        _contactMyAlbums = [[NSArray alloc] initWithObjects:[UIImage imageNamed:@"bottleButtonFish"], [UIImage imageNamed:@"avator"], [UIImage imageNamed:@"MeIcon"], nil];
+        _contactMyAlbums = [[NSArray alloc] initWithObjects:[UIImage imageNamed:@"bottleButtonFish"], [UIImage imageNamed:@"lcim_conversation_placeholder_avator"], [UIImage imageNamed:@"MeIcon"], nil];
     }
     return _contactMyAlbums;
 }

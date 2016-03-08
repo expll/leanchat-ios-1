@@ -35,6 +35,7 @@
 @protocol XHMessageTableViewControllerDelegate <NSObject>
 
 @optional
+
 /**
  *  发送文本消息的回调方法
  *
@@ -127,13 +128,6 @@
 - (BOOL)shouldPreventScrollToBottomWhileUserScrolling;
 
 /**
- *  判断是否支持下拉加载更多消息
- *
- *  @return 返回BOOL值，判定是否拥有这个功能
- */
-- (BOOL)shouldLoadMoreMessagesScrollToTop;
-
-/**
  *  下拉加载更多消息，只有在支持下拉加载更多消息的情况下才会调用。
  */
 - (void)loadMoreMessagesScrollTotop;
@@ -159,7 +153,7 @@
 /**
  *  数据源，显示多少消息
  */
-@property (nonatomic, strong) NSMutableArray *messages;
+@property (nonatomic, strong) NSMutableArray<XHMessage *> *messages;
 
 /**
  *  第三方接入的功能，也包括系统自身的功能，比如拍照、发送地理位置
@@ -198,6 +192,7 @@
 @property (nonatomic, assign) BOOL loadingMoreMessage;
 
 #pragma mark - Message View Controller Default stup
+
 /**
  *  是否允许手势关闭键盘，默认是允许
  */
@@ -222,6 +217,13 @@
  *  输入框的样式，默认为扁平化
  */
 @property (nonatomic, assign) XHMessageInputViewStyle inputViewStyle;
+
+/**
+ *  判断是否支持下拉加载更多消息, 如果已经加载完所有消息，那么就可以设为NO。
+ *
+ *  @return 返回BOOL值，判定是否拥有这个功能
+ */
+@property (nonatomic, assign) BOOL shouldLoadMoreMessagesScrollToTop;
 
 #pragma mark - DataSource Change
 /**

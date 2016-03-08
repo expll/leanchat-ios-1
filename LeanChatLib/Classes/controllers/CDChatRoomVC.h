@@ -22,7 +22,7 @@
 /**
  *  当前对话的 AVIMTypedMessage Array，开放给子类来定制
  */
-@property (nonatomic, strong, readonly) NSMutableArray *msgs;
+@property (nonatomic, strong, readonly) NSMutableArray<AVIMTypedMessage *> *msgs;
 
 /**
  *  初始化方法

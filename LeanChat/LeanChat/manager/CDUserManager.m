@@ -149,6 +149,9 @@ static CDUserManager *userManager;
 - (void)isMyFriend:(AVUser *)user block:(AVBooleanResultBlock)block {
     AVUser *currentUser = [AVUser currentUser];
     AVQuery *q = [currentUser followeeQuery];
+    //TODO:Why nil?
+    NSString *reason = [NSString stringWithFormat:@"\n\n------ BEGIN LOG ------\nclass name :%@\nline: %@\nreason:%@", @(__PRETTY_FUNCTION__), @(__LINE__), @"AVUser is nil"];
+    NSAssert(user, reason);
     [q whereKey:@"followee" equalTo:user];
     [q findObjectsInBackgroundWithBlock: ^(NSArray *objects, NSError *error) {
         if (error) {

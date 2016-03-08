@@ -221,9 +221,9 @@ static const CGFloat kXHBubbleMessageViewBottomPadding = 8;
     if (message.avator) {
         [self.avatorButton setImage:message.avator forState:UIControlStateNormal];
     } else if(message.avatorUrl){
-        [self.avatorButton setImageWithURL:[NSURL URLWithString:message.avatorUrl] placeholer:[UIImage imageNamed:@"avator"]];
+        [self.avatorButton setImageWithURL:[NSURL URLWithString:message.avatorUrl] placeholer:[UIImage imageNamed:@"lcim_conversation_placeholder_avator"]];
     } else {
-        [self.avatorButton setImage:[XHMessageAvatorFactory avatorImageNamed:[UIImage imageNamed:@"avator"] messageAvatorType:XHMessageAvatorTypeSquare] forState:UIControlStateNormal];
+        [self.avatorButton setImage:[XHMessageAvatorFactory avatorImageNamed:[UIImage imageNamed:@"lcim_conversation_placeholder_avator"] messageAvatorType:XHMessageAvatorTypeSquare] forState:UIControlStateNormal];
     }
 }
 
@@ -433,7 +433,7 @@ static const CGFloat kXHBubbleMessageViewBottomPadding = 8;
             }
             
             UIButton *avatorButton = [[UIButton alloc] initWithFrame:avatorButtonFrame];
-            [avatorButton setImage:[XHMessageAvatorFactory avatorImageNamed:[UIImage imageNamed:@"avator"] messageAvatorType:XHMessageAvatorTypeCircle] forState:UIControlStateNormal];
+            [avatorButton setImage:[XHMessageAvatorFactory avatorImageNamed:[UIImage imageNamed:@"lcim_conversation_placeholder_avator"] messageAvatorType:XHMessageAvatorTypeCircle] forState:UIControlStateNormal];
             [avatorButton addTarget:self action:@selector(avatorButtonClicked:) forControlEvents:UIControlEventTouchUpInside];
             [self.contentView addSubview:avatorButton];
             self.avatorButton = avatorButton;
@@ -491,9 +491,9 @@ static const CGFloat kXHBubbleMessageViewBottomPadding = 8;
         }
         
         if(!self.statusView){
+            //TODO:
             CGRect statusViewFrame=CGRectMake(0, 0, kXHStatusViewWidth, kXHStatusViewHeight);
-            XHMessageStatusView* statusView=[[XHMessageStatusView alloc] initWithFrame:statusViewFrame];
-            
+            XHMessageStatusView *statusView=[[XHMessageStatusView alloc] initWithFrame:statusViewFrame];
             //attributedLabel.backgroundColor=[UIColor redColor];
             [self.contentView addSubview:statusView];
             [self.contentView bringSubviewToFront:statusView];
@@ -573,6 +573,7 @@ static const CGFloat kXHBubbleMessageViewBottomPadding = 8;
     self.avatorButton.backgroundColor = [UIColor redColor];
     self.peerNameLabel.backgroundColor = [UIColor greenColor];
     self.backgroundColor = [UIColor yellowColor];
+    self.statusView.backgroundColor = [UIColor blueColor];
 #endif
 
 }

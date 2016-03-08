@@ -9,6 +9,7 @@
 #import "CDFailedMessageStore.h"
 #import <FMDB/FMDB.h>
 #import "CDMacros.h"
+#import "XHMessage.h"
 
 #define kCDFaildMessageTable @"failed_messages"
 #define kCDKeyId @"id"
@@ -72,7 +73,15 @@
     NSData *data = [resultSet dataForColumn:kCDKeyMessage];
     AVIMTypedMessage *message = [NSKeyedUnarchiver unarchiveObjectWithData:data];
     [record setObject:message forKey:kCDKeyMessage];
-    [record setObject:[resultSet stringForColumn:kCDKeyId] forKey:kCDKeyId];
+    //FIXME:crash beacause `[resultSet stringForColumn:kCDKeyId]` is nil
+    //TODO:why I should set id ? what are the id working for?
+    NSString *idValue = [resultSet stringForColumn:kCDKeyId];
+    //TODO: make sure idValue is not nil
+//    if (!idValue) {
+//        [record setObject:[[NSUUID UUID] UUIDString] forKey:kCDKeyId];
+//    } else {
+        [record setObject:idValue forKey:kCDKeyId];
+//    }
     return record;
 }
 
@@ -104,6 +113,21 @@
     }];
     return result;
 }
+
+
+- (void)insertFailedXHMessage:(XHMessage *)message {
+    if (message.conversationId == nil) {
+        @throw [NSException exceptionWithName:NSGenericException
+                                       reason:@"conversationId is nil"
+                                     userInfo:nil];
+    }
+    NSData *data = [NSKeyedArchiver archivedDataWithRootObject:message];
+    NSAssert(data, @"You can not insert nil message to DB");
+    [self.databaseQueue inDatabase:^(FMDatabase *db) {
+        [db executeUpdate:kCDInsertMessageSQL, message.messageId, message.conversationId, data];
+    }];
+}
+
 
 - (void)insertFailedMessage:(AVIMTypedMessage *)message {
     if (message.conversationId == nil) {

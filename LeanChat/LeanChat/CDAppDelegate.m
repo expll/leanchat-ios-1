@@ -42,6 +42,12 @@
     
     // Enable Crash Reporting
     [AVOSCloudCrashReporting enable];
+    //希望能提供更详细的日志信息，打开日志的方式是在 AVOSCloud 初始化语句之后加上下面这句：
+    
+    //Objective-C
+#ifndef __OPTIMIZE__
+    [AVOSCloud setAllLogsEnabled:YES];
+#endif
     
     [AVOSCloud setApplicationId:AVOSAppID clientKey:AVOSAppKey];
     //    [AVOSCloud setApplicationId:CloudAppId clientKey:CloudAppKey];

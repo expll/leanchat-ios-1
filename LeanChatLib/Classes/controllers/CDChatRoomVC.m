@@ -25,11 +25,18 @@
 
 static NSInteger const kOnePageSize = 10;
 
+typedef void (^LCIMSendMessageSuccessBlock)(NSString *messageUUID);
+typedef void (^LCIMErrorBlock)(NSString *messageUUID, NSError *error);
+
 @interface CDChatRoomVC ()
 
 @property (nonatomic, strong, readwrite) AVIMConversation *conversation;
-//TODO:msgs and messages are repeated
-@property (nonatomic, strong, readwrite) NSMutableArray *msgs;
+
+/*!
+ * msgs and messages are not repeated, this means online messages, which means sending succeed.
+ * When deal with those messages which are sent failed, you must use self.messages instead of this.
+ */
+@property (nonatomic, strong, readwrite) NSMutableArray *avimTypedMessage;
 @property (nonatomic, strong) XHMessageTableViewCell *currentSelectedCell;
 @property (nonatomic, strong) NSArray *emotionManagers;
 @property (nonatomic, strong) LZStatusView *clientStatusView;
@@ -48,7 +55,7 @@ static NSInteger const kOnePageSize = 10;
         //self.allowsSendFace = NO;
         //self.allowsSendMultiMedia = NO;
         self.loadingMoreMessage = NO;
-        _msgs = [NSMutableArray array];
+        _avimTypedMessage = [NSMutableArray array];
     }
     return self;
 }
@@ -56,7 +63,7 @@ static NSInteger const kOnePageSize = 10;
 - (instancetype)initWithConversation:(AVIMConversation *)conversation {
     self = [self init];
     if (self) {
-        self.conversation = conversation;
+        _conversation = conversation;
     }
     return self;
 }
@@ -88,7 +95,7 @@ static NSInteger const kOnePageSize = 10;
 - (void)viewDidDisappear:(BOOL)animated {
     [super viewDidDisappear:animated];
     [CDChatManager manager].chattingConversationId = nil;
-    if (self.msgs.count > 0) {
+    if (self.avimTypedMessage.count > 0) {
         [self updateConversationAsRead];
     }
     [[XHAudioPlayerHelper shareInstance] stopAudio];
@@ -159,9 +166,9 @@ static NSInteger const kOnePageSize = 10;
             disPlayViewController = messageDisplayTextView;
             break;
         }
-            break;
             
         case XHBubbleMessageMediaTypeVoice: {
+            //TODO:
             // Mark the voice as read and hide the red dot.
             //message.isRead = YES;
             //messageTableViewCell.messageBubbleView.voiceUnreadDotImageView.hidden = YES;
@@ -173,8 +180,7 @@ static NSInteger const kOnePageSize = 10;
                 [messageTableViewCell.messageBubbleView.animationVoiceImageView stopAnimating];
                 [[XHAudioPlayerHelper shareInstance] stopAudio];
                 self.currentSelectedCell = nil;
-            }
-            else {
+            } else {
                 self.currentSelectedCell = messageTableViewCell;
                 [messageTableViewCell.messageBubbleView.animationVoiceImageView startAnimating];
                 [[XHAudioPlayerHelper shareInstance] managerAudioWithFileName:message.voicePath toPlay:YES];
@@ -193,8 +199,6 @@ static NSInteger const kOnePageSize = 10;
             disPlayViewController = displayLocationViewController;
             break;
         }
-        default:
-            break;
     }
     if (disPlayViewController) {
         [self.navigationController pushViewController:disPlayViewController animated:NO];
@@ -257,8 +261,8 @@ static NSInteger const kOnePageSize = 10;
         return;
     }
     if ([text length] > 0 ) {
-        AVIMTextMessage *msg = [AVIMTextMessage messageWithText:[CDEmotionUtils plainStringFromEmojiString:text] attributes:nil];
-        [self sendMsg:msg];
+        XHMessage *xhMessage = [[XHMessage alloc] initWithText:[CDEmotionUtils emojiStringFromString:text] sender:sender timestamp:date];
+        [self sendMessage:xhMessage];
         [self finishSendMessageWithBubbleMessageType:XHBubbleMessageMediaTypeText];
     }
 }
@@ -268,7 +272,7 @@ static NSInteger const kOnePageSize = 10;
     if ([CDChatManager manager].client.status != AVIMClientStatusOpened) {
         return;
     }
-    [self sendImage:photo];
+    [self sendImage:photo fromSender:sender];
     [self finishSendMessageWithBubbleMessageType:XHBubbleMessageMediaTypePhoto];
 }
 
@@ -278,7 +282,7 @@ static NSInteger const kOnePageSize = 10;
         return;
     }
     AVIMVideoMessage *sendVideoMessage = [AVIMVideoMessage messageWithText:nil attachedFilePath:videoPath attributes:nil];
-    [self sendMsg:sendVideoMessage];
+    [self sendMessage:sendVideoMessage];
 }
 
 // 发送语音消息的回调方法
@@ -286,8 +290,7 @@ static NSInteger const kOnePageSize = 10;
     if ([CDChatManager manager].client.status != AVIMClientStatusOpened) {
         return;
     }
-    AVIMTypedMessage *msg = [AVIMAudioMessage messageWithText:nil attachedFilePath:voicePath attributes:nil];
-    [self sendMsg:msg];
+    [self sendVoiceWithPath:voicePath fromSender:sender];
 }
 
 // 发送表情消息的回调方法
@@ -304,10 +307,12 @@ static NSInteger const kOnePageSize = 10;
         [str insertString:emotion atIndex:range.location];
         textView.text = [CDEmotionUtils emojiStringFromString:str];
         textView.selectedRange = NSMakeRange(range.location + emotion.length, 0);
+        //TODO:
         [self finishSendMessageWithBubbleMessageType:XHBubbleMessageMediaTypeEmotion];
     } else {
-        AVIMEmotionMessage *msg = [AVIMEmotionMessage messageWithEmotionPath:emotion];
-        [self sendMsg:msg];
+        NSString *path = [[NSBundle mainBundle] pathForResource:emotion ofType:@"gif"];
+        XHMessage *message = [[XHMessage alloc] initWithEmotionPath:path emotionName:emotion sender:sender timestamp:nil];
+        [self sendMessage:message];
         [self finishSendMessageWithBubbleMessageType:XHBubbleMessageMediaTypeEmotion];
     }
 }
@@ -316,6 +321,7 @@ static NSInteger const kOnePageSize = 10;
     if ([CDChatManager manager].client.status != AVIMClientStatusOpened) {
         return;
     }
+    //TODO:
     [self finishSendMessageWithBubbleMessageType:XHBubbleMessageMediaTypeLocalPosition];
 }
 
@@ -355,8 +361,7 @@ static NSInteger const kOnePageSize = 10;
     SETextView *textView = cell.messageBubbleView.displayTextView;
     if (msg.bubbleMessageType == XHBubbleMessageTypeSending) {
         [textView setTextColor:[UIColor whiteColor]];
-    }
-    else {
+    } else {
         [textView setTextColor:[UIColor blackColor]];
     }
 }
@@ -425,63 +430,124 @@ static NSInteger const kOnePageSize = 10;
 
 #pragma mark - send message
 
-- (void)sendImage:(UIImage *)image {
+- (void)sendImage:(UIImage *)image fromSender:(NSString *)sender {
     NSData *imageData = UIImageJPEGRepresentation(image, 0.6);
     NSString *path = [[CDChatManager manager] tmpPath];
     NSError *error;
     [imageData writeToFile:path options:NSDataWritingAtomic error:&error];
     if (error == nil) {
-        AVIMImageMessage *msg = [AVIMImageMessage messageWithText:nil attachedFilePath:path attributes:nil];
-        [self sendMsg:msg];
+        XHMessage *message = [[XHMessage alloc]
+                              initWithPhoto:image
+                              photoPath:path
+                              thumbnailUrl:nil
+                              originPhotoUrl:nil
+                              sender:sender
+                              timestamp:nil
+                              ];
+        [self sendMessage:message];
     } else {
         [self alert:@"write image to file error"];
     }
 }
 
-- (void)sendLocationWithLatitude:(double)latitude longitude:(double)longitude address:(NSString *)address {
-    AVIMLocationMessage *locMsg = [AVIMLocationMessage messageWithText:nil latitude:latitude longitude:longitude attributes:nil];
-    [self sendMsg:locMsg];
+- (void)sendVoiceWithPath:(NSString *)voicePath fromSender:(NSString *)sender {
+    XHMessage *message = [[XHMessage alloc] initWithVoicePath:voicePath
+                                                     voiceUrl:nil
+                                                voiceDuration:nil
+                                                       sender:sender
+                                                    timestamp:nil
+                          ];
+    [self sendMessage:message];
 }
 
-- (void)sendMsg:(AVIMTypedMessage *)msg {
-    [[CDChatManager manager] sendMessage:msg conversation:self.conversation callback:^(BOOL succeeded, NSError *error) {
-        if (error) {
-            msg.sendTimestamp = [[NSDate date] timeIntervalSince1970] * 1000;
-            [[CDFailedMessageStore store] insertFailedMessage:msg];
-            [[CDSoundManager manager] playSendSoundIfNeed];
-            [self insertMessage:msg];
-        } else {
-            [[CDSoundManager manager] playSendSoundIfNeed];
-            [self insertMessage:msg];
+- (void)sendLocationWithLatitude:(double)latitude longitude:(double)longitude address:(NSString *)address {
+    CLLocation *location = [[CLLocation alloc] initWithLatitude:latitude longitude:longitude];
+    XHMessage *message = [[XHMessage alloc] initWithLocalPositionPhoto:[UIImage imageNamed:@"Fav_Cell_Loc"] geolocations:nil location:location sender:nil timestamp:nil];
+    [self sendMessage:message];
+}
+
+- (AVIMTypedMessage *)getAVIMTypedMessageWithMessage:(XHMessage *)message {
+    AVIMTypedMessage *avimTypedMessage;
+    switch (message.messageMediaType) {
+        case XHBubbleMessageMediaTypeText: {
+            avimTypedMessage = [AVIMTextMessage messageWithText:[CDEmotionUtils plainStringFromEmojiString:message.text] attributes:nil];
+            break;
         }
+        case XHBubbleMessageMediaTypeVideo:
+        case XHBubbleMessageMediaTypePhoto: {
+            avimTypedMessage = [AVIMImageMessage messageWithText:nil attachedFilePath:message.photoPath attributes:nil];
+            break;
+        }
+        case XHBubbleMessageMediaTypeVoice: {
+            avimTypedMessage = [AVIMAudioMessage messageWithText:nil attachedFilePath:message.voicePath attributes:nil];
+            break;
+        }
+            
+        case XHBubbleMessageMediaTypeEmotion:
+            avimTypedMessage = [AVIMEmotionMessage messageWithEmotionPath:message.emotionName];
+            break;
+            
+        case XHBubbleMessageMediaTypeLocalPosition: {
+            //TODO:
+            // avimTypedMessage = [AVIMLocationMessage messageWithText:nil latitude:message.latitude longitude:message.longitude attributes:nil];
+            break;
+        }
+    }
+    avimTypedMessage.sendTimestamp = [[NSDate date] timeIntervalSince1970] * 1000;
+    return avimTypedMessage;
+}
+
+- (void)sendMessage:(XHMessage *)message {
+    [self sendMessage:message success:^(NSString *messageUUID) {
+        [[CDSoundManager manager] playSendSoundIfNeed];
+    } failed:^(NSString *messageUUID, NSError *error) {
+        message.messageId = messageUUID;
+        [[CDFailedMessageStore store] insertFailedXHMessage:message];
     }];
 }
 
-- (void)replaceMesssage:(AVIMTypedMessage *)message atIndexPath:(NSIndexPath *)indexPath {
-    self.msgs[indexPath.row] = message;
-    XHMessage *xhMessage = [self getXHMessageByMsg:message];
-    self.messages[indexPath.row] = xhMessage;
-    [self.messageTableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
+- (void)sendMessage:(XHMessage *)message success:(LCIMSendMessageSuccessBlock)success failed:(LCIMErrorBlock)failed {
+    message.conversationId = self.conversation.conversationId;
+    message.status = XHMessageStatusSending;
+    AVIMTypedMessage *avimTypedMessage = [self getAVIMTypedMessageWithMessage:message];
+    [self.avimTypedMessage addObject:avimTypedMessage];
+    [self preloadMessageToTableView:message];
+
+    // if `message.messageId` is not nil, it is a failed message being resended.
+    NSString *messageUUID = (message.messageId) ? message.messageId : [[NSUUID UUID] UUIDString];
+    NSLog(@"🔴类名与方法名：%@（在第%@行），描述：%@, %@", @(__PRETTY_FUNCTION__), @(__LINE__), messageUUID, @(message.messageId.integerValue));
+    [[CDChatManager manager] sendMessage:avimTypedMessage conversation:self.conversation callback:^(BOOL succeeded, NSError *error) {
+        if (error) {
+            message.status = XHMessageStatusFailed;
+            !failed ?: failed(messageUUID, error);
+        } else {
+            message.status = XHMessageStatusSent;
+            !success ?: success(messageUUID);
+        }
+        //TODO:
+        //???:should I cache message even failed
+        [self cacheMessages:@[avimTypedMessage] callback:nil];
+        dispatch_async(dispatch_get_main_queue(),^{
+            NSUInteger index = [self.messages indexOfObject:message];
+            NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index inSection:0];
+            [self.messageTableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
+        });
+    }];
 }
 
 - (void)resendMessageAtIndexPath:(NSIndexPath *)indexPath discardIfFailed:(BOOL)discardIfFailed {
-    AVIMTypedMessage *msg = self.msgs[indexPath.row];
-    [self replaceMesssage:msg atIndexPath:indexPath];
-    NSString *recordId = msg.messageId;
-    [[CDChatManager manager] sendMessage:msg conversation:self.conversation callback:^(BOOL succeeded, NSError *error) {
-        if (error) {
-            if (discardIfFailed) {
-                // 服务器连通的情况下重发依然失败，说明消息有问题，如音频文件不存在，删掉这条消息
-                [[CDFailedMessageStore store] deleteFailedMessageByRecordId:recordId];
-                // 显示失败状态。列表里就让它存在吧，反正也重发不出去
-                [self replaceMesssage:msg atIndexPath:indexPath];
-            } else {
-                [self alertError:error];
-                [self replaceMesssage:msg atIndexPath:indexPath];
-            }
-        } else {
-            [[CDFailedMessageStore store] deleteFailedMessageByRecordId:recordId];
-            [self replaceMesssage:msg atIndexPath:indexPath];
+    //FIXME:why also get the last message when i want to get current xhMessage?
+    NSLog(@"🔴类名与方法名：%@（在第%@行），描述：%@ %@", @(__PRETTY_FUNCTION__), @(__LINE__), @(indexPath.row), @(self.messages.count));
+    XHMessage *xhMessage =  self.messages[indexPath.row];
+    [self.messages removeObjectAtIndex:indexPath.row];
+    [self.avimTypedMessage removeObjectAtIndex:indexPath.row];
+    [self.messageTableView reloadData];
+    [self sendMessage:xhMessage success:^(NSString *messageUUID) {
+        [[CDFailedMessageStore store] deleteFailedMessageByRecordId:messageUUID];
+    } failed:^(NSString *messageUUID, NSError *error) {
+        if (discardIfFailed) {
+            // 服务器连通的情况下重发依然失败，说明消息有问题，如音频文件不存在，删掉这条消息
+            [[CDFailedMessageStore store] deleteFailedMessageByRecordId:messageUUID];
         }
     }];
 }
@@ -505,8 +571,8 @@ static NSInteger const kOnePageSize = 10;
     if ([message.conversationId isEqualToString:self.conversation.conversationId]) {
         AVIMTypedMessage *foundMessage;
         NSInteger pos;
-        for (pos = 0; pos < self.msgs.count; pos++) {
-            AVIMTypedMessage *msg = self.msgs[pos];
+        for (pos = 0; pos < self.avimTypedMessage.count; pos++) {
+            AVIMTypedMessage *msg = self.avimTypedMessage[pos];
             if ([msg.messageId isEqualToString:message.messageId]) {
                 foundMessage = msg;
                 break;
@@ -528,25 +594,22 @@ static NSInteger const kOnePageSize = 10;
     return [NSDate dateWithTimeIntervalSince1970:timestamp / 1000];
 }
 
-- (XHMessage *)getXHMessageByMsg:(AVIMTypedMessage *)msg {
-    id<CDUserModelDelegate> fromUser = [[CDChatManager manager].userDelegate getUserById:msg.clientId];
+- (XHMessage *)getXHMessageByMsg:(AVIMTypedMessage *)message {
+    id<CDUserModelDelegate> fromUser = [[CDChatManager manager].userDelegate getUserById:message.clientId];
     XHMessage *xhMessage;
-    NSDate *time = [self getTimestampDate:msg.sendTimestamp];
-    if (msg.mediaType == kAVIMMessageMediaTypeText) {
-        AVIMTextMessage *textMsg = (AVIMTextMessage *)msg;
+    NSDate *time = [self getTimestampDate:message.sendTimestamp];
+    if (message.mediaType == kAVIMMessageMediaTypeText) {
+        AVIMTextMessage *textMsg = (AVIMTextMessage *)message;
         xhMessage = [[XHMessage alloc] initWithText:[CDEmotionUtils emojiStringFromString:textMsg.text] sender:fromUser.username timestamp:time];
-    }
-    else if (msg.mediaType == kAVIMMessageMediaTypeAudio) {
-        AVIMAudioMessage *audioMsg = (AVIMAudioMessage *)msg;
+    } else if (message.mediaType == kAVIMMessageMediaTypeAudio) {
+        AVIMAudioMessage *audioMsg = (AVIMAudioMessage *)message;
         NSString *duration = [NSString stringWithFormat:@"%.0f", audioMsg.duration];
         xhMessage = [[XHMessage alloc] initWithVoicePath:audioMsg.file.localPath voiceUrl:nil voiceDuration:duration sender:fromUser.username timestamp:time];
-    }
-    else if (msg.mediaType == kAVIMMessageMediaTypeLocation) {
-        AVIMLocationMessage *locationMsg = (AVIMLocationMessage *)msg;
+    } else if (message.mediaType == kAVIMMessageMediaTypeLocation) {
+        AVIMLocationMessage *locationMsg = (AVIMLocationMessage *)message;
         xhMessage = [[XHMessage alloc] initWithLocalPositionPhoto:[UIImage imageNamed:@"Fav_Cell_Loc"] geolocations:locationMsg.text location:[[CLLocation alloc] initWithLatitude:locationMsg.latitude longitude:locationMsg.longitude] sender:fromUser.username timestamp:time];
-    }
-    else if (msg.mediaType == kAVIMMessageMediaTypeImage) {
-        AVIMImageMessage *imageMsg = (AVIMImageMessage *)msg;
+    } else if (message.mediaType == kAVIMMessageMediaTypeImage) {
+        AVIMImageMessage *imageMsg = (AVIMImageMessage *)message;
         UIImage *image;
         NSError *error;
         NSData *data = [imageMsg.file getData:&error];
@@ -555,15 +618,14 @@ static NSInteger const kOnePageSize = 10;
         } else {
             image = [UIImage imageWithData:data];
         }
-        xhMessage = [[XHMessage alloc] initWithPhoto:image thumbnailUrl:nil originPhotoUrl:nil sender:fromUser.username timestamp:time];
-    }
-    else if (msg.mediaType == kAVIMMessageMediaTypeEmotion) {
-        AVIMEmotionMessage *emotionMsg = (AVIMEmotionMessage *)msg;
+        //TODO: image and photoPath may all be nil
+        xhMessage = [[XHMessage alloc] initWithPhoto:image photoPath:nil thumbnailUrl:nil originPhotoUrl:nil sender:fromUser.username timestamp:time];
+    } else if (message.mediaType == kAVIMMessageMediaTypeEmotion) {
+        AVIMEmotionMessage *emotionMsg = (AVIMEmotionMessage *)message;
         NSString *path = [[NSBundle mainBundle] pathForResource:emotionMsg.emotionPath ofType:@"gif"];
         xhMessage = [[XHMessage alloc] initWithEmotionPath:path sender:fromUser.username timestamp:time];
-    }
-    else if (msg.mediaType == kAVIMMessageMediaTypeVideo) {
-        AVIMVideoMessage *videoMsg = (AVIMVideoMessage *)msg;
+    } else if (message.mediaType == kAVIMMessageMediaTypeVideo) {
+        AVIMVideoMessage *videoMsg = (AVIMVideoMessage *)message;
         NSString *path = [[CDChatManager manager] videoPathOfMessag:videoMsg];
         xhMessage = [[XHMessage alloc] initWithVideoConverPhoto:[XHMessageVideoConverPhotoFactory videoConverPhotoWithVideoPath:path] videoPath:path videoUrl:nil sender:fromUser.username timestamp:time];
     } else {
@@ -574,10 +636,9 @@ static NSInteger const kOnePageSize = 10;
     xhMessage.avator = nil;
     xhMessage.avatorUrl = [fromUser avatarUrl];
     
-    if ([[CDChatManager manager].clientId isEqualToString:msg.clientId]) {
+    if ([[CDChatManager manager].clientId isEqualToString:message.clientId]) {
         xhMessage.bubbleMessageType = XHBubbleMessageTypeSending;
-    }
-    else {
+    } else {
         xhMessage.bubbleMessageType = XHBubbleMessageTypeReceiving;
     }
     NSInteger msgStatuses[4] = { AVIMMessageStatusSending, AVIMMessageStatusSent, AVIMMessageStatusDelivered, AVIMMessageStatusFailed };
@@ -587,22 +648,21 @@ static NSInteger const kOnePageSize = 10;
         XHMessageStatus status = XHMessageStatusReceived;
         int i;
         for (i = 0; i < 4; i++) {
-            if (msgStatuses[i] == msg.status) {
+            if (msgStatuses[i] == message.status) {
                 status = xhMessageStatuses[i];
                 break;
             }
         }
         xhMessage.status = status;
-    }
-    else {
+    } else {
         xhMessage.status = XHMessageStatusReceived;
     }
     return xhMessage;
 }
 
-- (NSMutableArray *)getXHMessages:(NSArray *)msgs {
+- (NSMutableArray *)getXHMessages:(NSArray *)avimTypedMessage {
     NSMutableArray *messages = [[NSMutableArray alloc] init];
-    for (AVIMTypedMessage *msg in msgs) {
+    for (AVIMTypedMessage *msg in avimTypedMessage) {
         XHMessage *xhMsg = [self getXHMessageByMsg:msg];
         if (xhMsg) {
             [messages addObject:xhMsg];
@@ -611,15 +671,26 @@ static NSInteger const kOnePageSize = 10;
     return messages;
 }
 
+- (NSMutableArray *)getAVIMMessages:(NSArray<XHMessage *> *)xhMessages {
+    NSMutableArray *messages = [[NSMutableArray alloc] init];
+    for (XHMessage *message in xhMessages) {
+        AVIMTypedMessage *avimTypedMessage = [self getAVIMTypedMessageWithMessage:message];
+        if (avimTypedMessage) {
+            [messages addObject:avimTypedMessage];
+        }
+    }
+    return messages;
+}
+
 #pragma mark - query messages
 
 - (void)queryAndCacheMessagesWithTimestamp:(int64_t)timestamp block:(AVIMArrayResultBlock)block {
-    [[CDChatManager manager] queryTypedMessagesWithConversation:self.conversation timestamp:timestamp limit:kOnePageSize block:^(NSArray *msgs, NSError *error) {
+    [[CDChatManager manager] queryTypedMessagesWithConversation:self.conversation timestamp:timestamp limit:kOnePageSize block:^(NSArray *avimTypedMessage, NSError *error) {
         if (error) {
-            block(msgs, error);
+            block(avimTypedMessage, error);
         } else {
-            [self memoryCacheMsgs:msgs callback:^(BOOL succeeded, NSError *error) {
-                block (msgs, error);
+            [self cacheMessages:avimTypedMessage callback:^(BOOL succeeded, NSError *error) {
+                block (avimTypedMessage, error);
             }];
         }
     }];
@@ -630,26 +701,28 @@ static NSInteger const kOnePageSize = 10;
         return;
     } else {
         self.loadingMoreMessage = YES;
-        [self queryAndCacheMessagesWithTimestamp:0 block:^(NSArray *msgs, NSError *error) {
+        [self queryAndCacheMessagesWithTimestamp:0 block:^(NSArray *avimTypedMessage, NSError *error) {
             if ([self filterError:error]) {
                 // 失败消息加到末尾，因为 SDK 缓存不保存它们
-                NSArray *failedMessages = [[CDFailedMessageStore store] selectFailedMessagesByConversationId:self.conversation.conversationId];
-                NSMutableArray *allMessages = [NSMutableArray arrayWithArray:msgs];
-                [allMessages addObjectsFromArray:failedMessages];
-                
-                NSMutableArray *xhMsgs = [self getXHMessages:allMessages];
-                self.messages = xhMsgs;
-                self.msgs = allMessages;
+                //TODO:why only when the net is ok, can the failed messages load?!!
+                NSMutableArray *xhSucceedMessags = [self getXHMessages:avimTypedMessage];
+                self.messages = [NSMutableArray arrayWithArray:xhSucceedMessags];
+                NSArray<XHMessage *> *failedMessages = [[CDFailedMessageStore store] selectFailedMessagesByConversationId:self.conversation.conversationId];
+                NSMutableArray *allFailedAVIMMessages = [self getAVIMMessages:failedMessages];
+                NSMutableArray *allMessages = [NSMutableArray arrayWithArray:avimTypedMessage];
+                [allMessages addObjectsFromArray:[allFailedAVIMMessages copy]];
+                [self.messages addObjectsFromArray:failedMessages];
+                self.avimTypedMessage = allMessages;
                 [self.messageTableView reloadData];
                 [self scrollToBottomAnimated:NO];
                 
-                if (self.msgs.count > 0) {
+                if (self.avimTypedMessage.count > 0) {
                     [self updateConversationAsRead];
                 }
                 
                 // 如果连接上，则重发所有的失败消息。若夹杂在历史消息中间不好处理
                 if ([CDChatManager manager].connect) {
-                    for (NSInteger row = msgs.count;row < allMessages.count; row ++) {
+                    for (NSInteger row = self.messages.count; row < allMessages.count; row ++) {
                         [self resendMessageAtIndexPath:[NSIndexPath indexPathForRow:row inSection:0] discardIfFailed:YES];
                     }
                 }
@@ -659,36 +732,41 @@ static NSInteger const kOnePageSize = 10;
     }
 }
 
-- (void)loadOldMessages{
+- (void)loadOldMessages {
     if (self.messages.count == 0 || self.loadingMoreMessage) {
         return;
-    } else {
-        self.loadingMoreMessage = YES;
-        AVIMTypedMessage *msg = [self.msgs objectAtIndex:0];
-        int64_t timestamp = msg.sendTimestamp;
-        [self queryAndCacheMessagesWithTimestamp:timestamp block:^(NSArray *msgs, NSError *error) {
-            if ([self filterError:error]) {
-                NSMutableArray *xhMsgs = [[self getXHMessages:msgs] mutableCopy];
-                NSMutableArray *newMsgs = [NSMutableArray arrayWithArray:msgs];
-                [newMsgs addObjectsFromArray:self.msgs];
-                self.msgs = newMsgs;
-                [self insertOldMessages:xhMsgs completion: ^{
-                    self.loadingMoreMessage = NO;
-                }];
-            } else {
-                self.loadingMoreMessage = NO;
-            }
-        }];
     }
+    self.loadingMoreMessage = YES;
+    AVIMTypedMessage *msg = [self.avimTypedMessage objectAtIndex:0];
+    int64_t timestamp = msg.sendTimestamp;
+    [self queryAndCacheMessagesWithTimestamp:timestamp block:^(NSArray *avimTypedMessage, NSError *error) {
+        self.shouldLoadMoreMessagesScrollToTop = YES;
+        if ([self filterError:error]) {
+            if (avimTypedMessage.count == 0) {
+                self.shouldLoadMoreMessagesScrollToTop = NO;
+                self.loadingMoreMessage = NO;
+                return;
+            }
+            NSMutableArray *xhMsgs = [[self getXHMessages:avimTypedMessage] mutableCopy];
+            NSMutableArray *newMsgs = [NSMutableArray arrayWithArray:avimTypedMessage];
+            [newMsgs addObjectsFromArray:self.avimTypedMessage];
+            self.avimTypedMessage = newMsgs;
+            [self insertOldMessages:xhMsgs completion: ^{
+                self.loadingMoreMessage = NO;
+            }];
+        } else {
+            self.loadingMoreMessage = NO;
+        }
+    }];
 }
 
-- (void)memoryCacheMsgs:(NSArray *)msgs callback:(AVBooleanResultBlock)callback {
+- (void)cacheMessages:(NSArray<AVIMTypedMessage *> *)messages callback:(AVBooleanResultBlock)callback {
     [self runInGlobalQueue:^{
         NSMutableSet *userIds = [[NSMutableSet alloc] init];
-        for (AVIMTypedMessage *msg in msgs) {
-            [userIds addObject:msg.clientId];
-            if (msg.mediaType == kAVIMMessageMediaTypeImage || msg.mediaType == kAVIMMessageMediaTypeAudio) {
-                AVFile *file = msg.file;
+        for (AVIMTypedMessage *message in messages) {
+            [userIds addObject:message.clientId];
+            if (message.mediaType == kAVIMMessageMediaTypeImage || message.mediaType == kAVIMMessageMediaTypeAudio) {
+                AVFile *file = message.file;
                 if (file && file.isDataAvailable == NO) {
                     NSError *error;
                     // 下载到本地
@@ -697,11 +775,11 @@ static NSInteger const kOnePageSize = 10;
                         DLog(@"download file error : %@", error);
                     }
                 }
-            } else if (msg.mediaType == kAVIMMessageMediaTypeVideo) {
-                NSString *path = [[CDChatManager manager] videoPathOfMessag:(AVIMVideoMessage *)msg];
+            } else if (message.mediaType == kAVIMMessageMediaTypeVideo) {
+                NSString *path = [[CDChatManager manager] videoPathOfMessag:(AVIMVideoMessage *)message];
                 if (![[NSFileManager defaultManager] fileExistsAtPath:path]) {
                     NSError *error;
-                    NSData *data = [msg.file getData:&error];
+                    NSData *data = [message.file getData:&error];
                     if (error) {
                         DLog(@"download file error : %@", error);
                     } else {
@@ -713,7 +791,7 @@ static NSInteger const kOnePageSize = 10;
         if ([[CDChatManager manager].userDelegate respondsToSelector:@selector(cacheUserByIds:block:)]) {
             [[CDChatManager manager].userDelegate cacheUserByIds:userIds block:^(BOOL succeeded, NSError *error) {
                 [self runInMainQueue:^{
-                    callback(succeeded, error);
+                    !callback ?: callback(succeeded, error);
                 }];
             }];
         } else {
@@ -724,18 +802,24 @@ static NSInteger const kOnePageSize = 10;
     }];
 }
 
+- (void)preloadMessageToTableView:(XHMessage *)message {
+    [self.messages addObject:message];
+    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:self.messages.count - 1 inSection:0];
+    [self.messageTableView insertRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+    [self scrollToBottomAnimated:YES];
+}
+
 - (void)insertMessage:(AVIMTypedMessage *)message {
     if (self.loadingMoreMessage) {
-        [self performSelector:@selector(insertMessage:) withObject:message afterDelay:1];
         return;
     }
     self.loadingMoreMessage = YES;
-    [self memoryCacheMsgs:@[message] callback:^(BOOL succeeded, NSError *error) {
+    [self cacheMessages:@[message] callback:^(BOOL succeeded, NSError *error) {
         if ([self filterError:error]) {
             XHMessage *xhMessage = [self getXHMessageByMsg:message];
-            [self.msgs addObject:message];
+            [self.avimTypedMessage addObject:message];
             [self.messages addObject:xhMessage];
-            NSIndexPath *indexPath = [NSIndexPath indexPathForRow:self.msgs.count -1 inSection:0];
+            NSIndexPath *indexPath = [NSIndexPath indexPathForRow:self.avimTypedMessage.count -1 inSection:0];
             [self.messageTableView insertRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
             [self scrollToBottomAnimated:YES];
         }

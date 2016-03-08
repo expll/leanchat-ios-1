@@ -18,6 +18,7 @@ static CDChatManager *instance;
 
 @interface CDChatManager () <AVIMClientDelegate, AVIMSignatureDataSource>
 
+//@property (nonatomic, strong, readwrite) NSString *clientId;
 @property (nonatomic, assign, readwrite) BOOL connect;
 @property (nonatomic, strong) NSMutableDictionary *cachedConversations;
 @property (nonatomic, strong) NSString *plistPath;
@@ -194,10 +195,6 @@ static CDChatManager *instance;
 #pragma mark - utils
 
 - (void)sendMessage:(AVIMTypedMessage*)message conversation:(AVIMConversation *)conversation callback:(AVBooleanResultBlock)block {
-    if (self.client.status != AVIMClientStatusOpened) {
-            NSString *errorReasonText = @"client status is not opened";
-            DLog(@"%@", errorReasonText);
-    }
     id<CDUserModelDelegate> selfUser = [[CDChatManager manager].userDelegate getUserById:self.clientId];
     NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
     // 云代码中获取到用户名，来设置推送消息, 老王:今晚约吗？
@@ -454,7 +451,7 @@ static CDChatManager *instance;
 }
 
 - (NSString *)tmpPath {
-    return [[self getFilesPath] stringByAppendingFormat:@"tmp"];
+    return [[self getFilesPath] stringByAppendingFormat:@"%@", [[NSUUID UUID] UUIDString]];
 }
 
 - (NSString *)uuid {
